@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Tour em Realidade Aumentada</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <!-- Componentes registrados ANTES de <a-scene> para que A-Frame os reconheça. -->
+  <script>
+    /* ── grow-line: linha bezier que cresce animada quadro a quadro ── */
+    AFRAME.registerComponent('grow-line', {
+      schema: {
+        start:    { type: 'vec3',   default: { x: 0,   y: 0,   z: 0 } },
+        cp:       { type: 'vec3',   default: { x: 0,   y: 0.5, z: 0 } },
+        end:      { type: 'vec3',   default: { x: 1,   y: 1,   z: 0 } },
+        color:    { type: 'color',  default: '#cfd3dc' },
+        width:    { type: 'number', default: 0.006 },
+        opacity:  { type: 'number', default: 0.65 },
+        duration: { type: 'number', default: 700 }   // ms para crescer do início ao fim
+      },
+      init: function () {
+        var d = this.data;
+        this._curve = new THREE.QuadraticBezierCurve3(
+          new THREE.Vector3(d.start.x, d.start.y, d.start.z),
+          new THREE.Vector3(d.cp.x,    d.cp.y,    d.cp.z),
+          new THREE.Vector3(d.end.x,   d.end.y,   d.end.z)
+        );
+        // Pré-amostrar o caminho completo da curva (evita recalcular no tick)
+        this._N    = 48;
+        this._pts  = [];
+        for (var i = 0; i <= this._N; i++) this._pts.push(this._curve.getPoint(i / this._N));
+        this._mat  = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(d.color), opacity: d.opacity, transparent: true
+        });
+        this._growing   = false;
+        this._startTime = null;
+        this._lastN     = 0;
+      },
+      /* Chame para iniciar a animação de crescimento */
+      startGrow: function () {
+        this._startTime = null;
+        this._growing   = true;
+        this._lastN     = 0;
+      },
+      /* Chame para limpar e ocultar a linha */
+      reset: function () {
+        this._growing   = false;
+        this._startTime = null;
+        this._lastN     = 0;
+        var old = this.el.getObject3D('tube');
+        if (old) old.geometry.dispose();
+        this.el.removeObject3D('tube');
+      },
+      tick: function (time) {
+        if (!this._growing) return;
+        if (this._startTime === null) this._startTime = time;
+
+        var raw = Math.min((time - this._startTime) / this.data.duration, 1);
+        // easeInOutCubic
+        var p = raw < 0.5 ? 4*raw*raw*raw : 1 - Math.pow(-2*raw+2,3)/2;
+        var n = Math.max(2, Math.round(p * this._N) + 1);
+
+        if (n !== this._lastN) {   // só reconstrói quando o ponto muda
+          this._lastN = n;
+          var pts = this._pts.slice(0, n);
+          try {
+            var crv = pts.length >= 3
+              ? new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5)
+              : new THREE.LineCurve3(pts[0], pts[pts.length - 1]);
+            var geo = new THREE.TubeGeometry(crv, Math.max(1, n-1), this.data.width, 5, false);
+            var old = this.el.getObject3D('tube');
+            if (old) old.geometry.dispose();
+            this.el.setObject3D('tube', new THREE.Mesh(geo, this._mat));
+          } catch(e) {}
+        }
+        if (raw >= 1) { this._growing = false; this.el.emit('grow-complete'); }
+      },
+      remove: function () { this.reset(); if (this._mat) this._mat.dispose(); }
+    });
+
+    /* ── ar-icon: ícone geométrico desenhado em canvas → textura THREE.js ── */
+    AFRAME.registerComponent('ar-icon', {
+      schema: { type: { default: 'play' } },
+      init: function () {
+        var C = 256, cx = 128, cy = 128;
+        var cvs = document.createElement('canvas');
+        cvs.width = C; cvs.height = C;
+        var ctx = cvs.getContext('2d');
+        ctx.clearRect(0, 0, C, C);
+        ctx.fillStyle   = '#ffffff';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.lineWidth   = 15;
+
+        /* Roundrect sem depender de ctx.roundRect (compatibilidade) */
+        function rr(x, y, w, h, r) {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + w - r, y);  ctx.arcTo(x+w, y,   x+w, y+r,   r);
+          ctx.lineTo(x + w, y+h-r);  ctx.arcTo(x+w, y+h, x+w-r,y+h, r);
+          ctx.lineTo(x + r, y + h);  ctx.arcTo(x,   y+h, x,   y+h-r, r);
+          ctx.lineTo(x, y + r);      ctx.arcTo(x,   y,   x+r, y,     r);
+          ctx.closePath(); ctx.fill();
+        }
+
+        switch (this.data.type) {
+          case 'video':
+            /* Triângulo play */
+            ctx.beginPath();
+            ctx.moveTo(cx - 32, cy - 50);
+            ctx.lineTo(cx + 58, cy);
+            ctx.lineTo(cx - 32, cy + 50);
+            ctx.closePath(); ctx.fill();
+            break;
+
+          case 'collection':
+            /* Grade 2×2 */
+            var s = 46, g = 14;
+            rr(cx-s-g/2, cy-s-g/2, s, s, 8);
+            rr(cx+g/2,   cy-s-g/2, s, s, 8);
+            rr(cx-s-g/2, cy+g/2,   s, s, 8);
+            rr(cx+g/2,   cy+g/2,   s, s, 8);
+            break;
+
+          case 'site':
+            /* Ícone "link externo" */
+            /* seta diagonal */
+            ctx.beginPath();
+            ctx.moveTo(cx - 18, cy + 22); ctx.lineTo(cx + 54, cy - 50);
+            ctx.stroke();
+            /* cabeça da seta */
+            ctx.beginPath();
+            ctx.moveTo(cx+54, cy-50); ctx.lineTo(cx+18, cy-50); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx+54, cy-50); ctx.lineTo(cx+54, cy-14); ctx.stroke();
+            /* canto da caixa */
+            ctx.beginPath();
+            ctx.moveTo(cx+6,  cy-8);
+            ctx.lineTo(cx-52, cy-8);
+            ctx.lineTo(cx-52, cy+52);
+            ctx.lineTo(cx+8,  cy+52);
+            ctx.lineTo(cx+8,  cy+6);
+            ctx.stroke();
+            break;
+        }
+
+        var tex = new THREE.CanvasTexture(cvs);
+        var geo = new THREE.PlaneGeometry(0.28, 0.28);
+        var mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false });
+        this.el.setObject3D('icon', new THREE.Mesh(geo, mat));
+      },
+      remove: function () { this.el.removeObject3D('icon'); }
+    });
+
+    AFRAME.registerComponent('link-button-bg', {
+      init: function () {
+        var C = 256;
+        var cvs = document.createElement('canvas');
+        cvs.width = C;
+        cvs.height = C;
+        var ctx = cvs.getContext('2d');
+
+        ctx.clearRect(0, 0, C, C);
+        ctx.beginPath();
+        ctx.arc(128, 128, 112, 0, Math.PI * 2);
+        ctx.fillStyle = '#050505';
+        ctx.fill();
+
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = 'rgba(233, 69, 96, 0.92)';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(128, 128, 96, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(207, 211, 220, 0.24)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        var tex = new THREE.CanvasTexture(cvs);
+        var geo = new THREE.PlaneGeometry(0.42, 0.42);
+        var mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: true });
+        this.el.setObject3D('link-bg', new THREE.Mesh(geo, mat));
+        this._tex = tex;
+      },
+      remove: function () {
+        this.el.removeObject3D('link-bg');
+        if (this._tex) this._tex.dispose();
+      }
+    });
+
+    AFRAME.registerComponent('adaptive-scale', {
+      schema: {
+        factor: { type: 'number', default: 0.8 },
+        min:    { type: 'number', default: 0.52 },
+        max:    { type: 'number', default: 2.15 },
+        screen: { type: 'number', default: 380 },
+        lerp:   { type: 'number', default: 0.15 }
+      },
+      init: function () {
+        this._cameraPos = new THREE.Vector3();
+        this._targetPos = new THREE.Vector3();
+        this._p0 = new THREE.Vector3();
+        this._px = new THREE.Vector3();
+        this._py = new THREE.Vector3();
+        this._currentScale = null;
+      },
+      isWorldVisible: function () {
+        var obj = this.el.object3D;
+        while (obj) {
+          if (!obj.visible) return false;
+          obj = obj.parent;
+        }
+        return true;
+      },
+      getTargetUnitPixels: function (camera, renderer) {
+        var targetObj = this.el.object3D.parent || this.el.object3D;
+        var canvas = renderer && renderer.domElement;
+        var width = canvas ? canvas.clientWidth : window.innerWidth;
+        var height = canvas ? canvas.clientHeight : window.innerHeight;
+
+        if (!width || !height) return 0;
+
+        targetObj.updateWorldMatrix(true, false);
+        this._p0.set(0, 0, 0).applyMatrix4(targetObj.matrixWorld).project(camera);
+        this._px.set(1, 0, 0).applyMatrix4(targetObj.matrixWorld).project(camera);
+        this._py.set(0, 1, 0).applyMatrix4(targetObj.matrixWorld).project(camera);
+
+        var xPixels = Math.hypot(
+          (this._px.x - this._p0.x) * width * 0.5,
+          (this._px.y - this._p0.y) * height * 0.5
+        );
+        var yPixels = Math.hypot(
+          (this._py.x - this._p0.x) * width * 0.5,
+          (this._py.y - this._p0.y) * height * 0.5
+        );
+
+        return Math.max(xPixels, yPixels);
+      },
+      tick: function () {
+        var scene = this.el.sceneEl;
+        if (!scene || !scene.camera || !this.isWorldVisible()) {
+          this._currentScale = null;
+          return;
+        }
+
+        scene.camera.getWorldPosition(this._cameraPos);
+        var targetObj = this.el.object3D.parent || this.el.object3D;
+        targetObj.getWorldPosition(this._targetPos);
+
+        var distance = this._cameraPos.distanceTo(this._targetPos);
+        var targetPixels = this.getTargetUnitPixels(scene.camera, scene.renderer);
+        var canvas = scene.renderer && scene.renderer.domElement;
+        var viewportWidth = canvas ? canvas.clientWidth : window.innerWidth;
+        var viewportHeight = canvas ? canvas.clientHeight : window.innerHeight;
+        var isPortrait = viewportHeight > viewportWidth;
+        var portraitScreenFactor = this.el.classList.contains('words-group') ? 0.72 : 0.78;
+        var portraitMaxFactor = this.el.classList.contains('words-group') ? 0.78 : 0.82;
+        var screenTarget = this.data.screen * (isPortrait ? portraitScreenFactor : 1);
+        var minScale = this.data.min * (isPortrait ? 0.78 : 1);
+        var maxScale = this.data.max * (isPortrait ? portraitMaxFactor : 1);
+        maxScale = Math.max(minScale, maxScale);
+
+        var targetScale = THREE.MathUtils.clamp(
+          targetPixels > 1 ? screenTarget / targetPixels : distance * this.data.factor * (isPortrait ? 0.78 : 1),
+          minScale,
+          maxScale
+        );
+
+        if (this._currentScale === null) this._currentScale = targetScale;
+
+        this._currentScale = THREE.MathUtils.lerp(
+          this._currentScale,
+          targetScale,
+          this.data.lerp
+        );
+
+        this.el.object3D.scale.set(this._currentScale, this._currentScale, this._currentScale);
+      }
+    });
+
+    AFRAME.registerComponent('fit-gltf-model', {
+      schema: {
+        size: { type: 'number', default: 0.52 }
+      },
+      init: function () {
+        this._box = new THREE.Box3();
+        this._size = new THREE.Vector3();
+        this._center = new THREE.Vector3();
+        this._localCenter = new THREE.Vector3();
+        this.el.addEventListener('model-loaded', this.fit.bind(this));
+        this.el.addEventListener('model-error', function (event) {
+          console.error('[WebAR] Falha ao carregar modelo 3D:', this.el.getAttribute('src'), event.detail);
+        }.bind(this));
+      },
+      fit: function () {
+        var mesh = this.el.getObject3D('mesh');
+        if (!mesh) return;
+
+        mesh.traverse(function (obj) {
+          obj.frustumCulled = false;
+        });
+
+        this.el.object3D.scale.set(1, 1, 1);
+        mesh.position.set(0, 0, 0);
+        mesh.updateMatrixWorld(true);
+
+        this._box.setFromObject(mesh);
+        if (this._box.isEmpty()) return;
+
+        this._box.getCenter(this._center);
+        this._localCenter.copy(this._center);
+        this.el.object3D.worldToLocal(this._localCenter);
+        mesh.position.sub(this._localCenter);
+        mesh.updateMatrixWorld(true);
+
+        this._box.setFromObject(mesh);
+        this._box.getSize(this._size);
+
+        var maxDim = Math.max(this._size.x, this._size.y, this._size.z);
+        if (!maxDim || !isFinite(maxDim)) return;
+
+        var scale = this.data.size / maxDim;
+        this.el.object3D.scale.set(scale, scale, scale);
+      }
+    });
+
+    AFRAME.registerComponent('product-model-status', {
+      schema: {
+        name:  { default: '' },
+        label: { default: '.product-label' }
+      },
+      init: function () {
+        this._labelEl = this.el.parentEl && this.el.parentEl.querySelector(this.data.label);
+        if (this._labelEl) this._labelEl.setAttribute('value', 'Carregando 3D...');
+
+        this.el.addEventListener('model-loaded', function () {
+          var mesh = this.el.getObject3D('mesh');
+          if (mesh) {
+            mesh.visible = true;
+            mesh.traverse(function (obj) {
+              obj.frustumCulled = false;
+              obj.renderOrder = 999;
+              if (!obj.material) return;
+              var materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+              materials.forEach(function (mat) {
+                mat.side = THREE.DoubleSide;
+                mat.transparent = false;
+                mat.opacity = 1;
+                mat.depthWrite = false;
+                mat.depthTest = false;
+                if ('metalness' in mat) mat.metalness = 0;
+                if ('roughness' in mat) mat.roughness = 0.55;
+                if (mat.emissive) {
+                  mat.emissive.set('#ffffff');
+                  mat.emissiveIntensity = 0.28;
+                }
+                mat.needsUpdate = true;
+              });
+            });
+          }
+          if (this._labelEl) this._labelEl.setAttribute('value', this.data.name);
+          console.info('[WebAR] Modelo 3D carregado:', this.data.name, this.el.getAttribute('src'));
+        }.bind(this));
+
+        this.el.addEventListener('model-error', function (event) {
+          if (this._labelEl) this._labelEl.setAttribute('value', 'Erro ao carregar 3D');
+          console.error('[WebAR] Erro no modelo 3D:', this.data.name, this.el.getAttribute('src'), event.detail);
+        }.bind(this));
+      }
+    });
+
+    AFRAME.registerComponent('hud-label', {
+      schema: {
+        text:   { default: '' },
+        width:  { type: 'number', default: 0.8 },
+        height: { type: 'number', default: 0.18 },
+        bg:     { default: '#b1121b' },
+        color:  { default: '#ffffff' },
+        font:   { type: 'number', default: 42 },
+        variant:{ default: 'solid' }
+      },
+      init: function () { this.render(); },
+      update: function () { this.render(); },
+      render: function () {
+        var d = this.data;
+        var W = 1024;
+        var H = 256;
+        var cvs = document.createElement('canvas');
+        cvs.width = W;
+        cvs.height = H;
+        var ctx = cvs.getContext('2d');
+        var r = 100;
+
+        ctx.clearRect(0, 0, W, H);
+        var isGlass = d.variant === 'glass';
+        ctx.fillStyle = isGlass ? 'rgba(0,0,0,0.58)' : d.bg;
+        ctx.shadowColor = 'rgba(233, 69, 96, 0.9)';
+        ctx.shadowBlur = isGlass ? 38 : 26;
+        ctx.beginPath();
+        ctx.moveTo(r, 18);
+        ctx.lineTo(W - r, 18);
+        ctx.quadraticCurveTo(W - 18, 18, W - 18, r);
+        ctx.lineTo(W - 18, H - r);
+        ctx.quadraticCurveTo(W - 18, H - 18, W - r, H - 18);
+        ctx.lineTo(r, H - 18);
+        ctx.quadraticCurveTo(18, H - 18, 18, H - r);
+        ctx.lineTo(18, r);
+        ctx.quadraticCurveTo(18, 18, r, 18);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = isGlass ? 'rgba(233,69,96,0.85)' : 'rgba(255,255,255,0.42)';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+
+        if (isGlass) {
+          ctx.strokeStyle = 'rgba(207,211,220,0.28)';
+          ctx.lineWidth = 3;
+          for (var gx = 70; gx < W - 70; gx += 72) {
+            ctx.beginPath();
+            ctx.moveTo(gx, 42);
+            ctx.lineTo(gx + 24, 42);
+            ctx.stroke();
+          }
+          ctx.fillStyle = 'rgba(233,69,96,0.95)';
+          ctx.fillRect(54, H / 2 - 32, 8, 64);
+          ctx.fillRect(W - 62, H / 2 - 32, 8, 64);
+        }
+
+        ctx.fillStyle = d.color;
+        ctx.font = (isGlass ? '800 ' : '700 ') + d.font + 'px Segoe UI, Arial, sans-serif';
+        ctx.shadowColor = isGlass ? 'rgba(255,255,255,0.35)' : 'transparent';
+        ctx.shadowBlur = isGlass ? 8 : 0;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(d.text, W / 2, H / 2);
+
+        if (this._tex) this._tex.dispose();
+        this._tex = new THREE.CanvasTexture(cvs);
+        this._tex.needsUpdate = true;
+
+        var geo = new THREE.PlaneGeometry(d.width, d.height);
+        var mat = new THREE.MeshBasicMaterial({ map: this._tex, transparent: true, depthTest: false });
+        this.el.setObject3D('hud-label', new THREE.Mesh(geo, mat));
+      },
+      remove: function () {
+        this.el.removeObject3D('hud-label');
+        if (this._tex) this._tex.dispose();
+      }
+    });
+
+    AFRAME.registerComponent('scan-frame', {
+      init: function () {
+        var z = 0.13;
+        var makePlane = function (x, y, w, h, color, opacity) {
+          var p = document.createElement('a-plane');
+          p.setAttribute('position', x + ' ' + y + ' ' + z);
+          p.setAttribute('width', w);
+          p.setAttribute('height', h);
+          p.setAttribute('color', color);
+          p.setAttribute('opacity', opacity);
+          p.setAttribute('material', 'shader:flat; transparent:true');
+          return p;
+        };
+
+        var w = 1.28;
+        var h = 0.86;
+        var l = 0.2;
+        var t = 0.018;
+        var x = w / 2;
+        var y = h / 2;
+
+        var grid = makePlane(0, 0, 1.5, 1.04, '#000000', 0.28);
+        grid.setAttribute('position', '0 0 0.105');
+        this.el.appendChild(grid);
+
+        for (var gx = -0.6; gx <= 0.61; gx += 0.2) {
+          this.el.appendChild(makePlane(gx, 0, 0.006, 0.96, '#cfd3dc', 0.14));
+        }
+        for (var gy = -0.4; gy <= 0.41; gy += 0.16) {
+          this.el.appendChild(makePlane(0, gy, 1.38, 0.006, '#cfd3dc', 0.14));
+        }
+
+        var pulse1 = document.createElement('a-ring');
+        pulse1.setAttribute('position', '0 0 0.14');
+        pulse1.setAttribute('radius-inner', '0.12');
+        pulse1.setAttribute('radius-outer', '0.13');
+        pulse1.setAttribute('color', '#e94560');
+        pulse1.setAttribute('opacity', '0.72');
+        pulse1.setAttribute('material', 'shader:flat; transparent:true');
+        pulse1.setAttribute('animation__scale',
+          'property:scale; from:0.35 0.35 0.35; to:5.8 3.9 1; dur:1800; loop:true; easing:easeOutQuad');
+        pulse1.setAttribute('animation__fade',
+          'property:opacity; from:0.72; to:0; dur:1800; loop:true; easing:easeOutQuad');
+        this.el.appendChild(pulse1);
+
+        var pulse2 = pulse1.cloneNode(false);
+        pulse2.setAttribute('animation__scale',
+          'property:scale; from:0.35 0.35 0.35; to:5.8 3.9 1; dur:1800; delay:650; loop:true; easing:easeOutQuad');
+        pulse2.setAttribute('animation__fade',
+          'property:opacity; from:0.5; to:0; dur:1800; delay:650; loop:true; easing:easeOutQuad');
+        this.el.appendChild(pulse2);
+
+        [
+          [-x + l/2, y, l, t], [-x, y - l/2, t, l],
+          [ x - l/2, y, l, t], [ x, y - l/2, t, l],
+          [-x + l/2,-y, l, t], [-x,-y + l/2, t, l],
+          [ x - l/2,-y, l, t], [ x,-y + l/2, t, l]
+        ].forEach(function (seg) {
+          this.el.appendChild(makePlane(seg[0], seg[1], seg[2], seg[3], '#e94560', 0.9));
+        }, this);
+
+        var scan = makePlane(0, y, w, 0.026, '#e94560', 0.38);
+        scan.setAttribute('animation__scan',
+          'property:position; from:0 ' + y + ' ' + z + '; to:0 ' + (-y) + ' ' + z +
+          '; dur:1200; dir:alternate; loop:true; easing:easeInOutSine');
+        this.el.appendChild(scan);
+      }
+    });
+
+    AFRAME.registerComponent('orbit-tags', {
+      schema: {
+        words:  { default: 'INOVACAO,PRESENCA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN' },
+        radius: { type: 'number', default: 1.15 },
+        speed:  { type: 'number', default: 15000 },
+        hold:   { type: 'number', default: 500 }
+      },
+      init: function () {
+        this._tags = [];
+        this._startTime = null;
+        this._orbiting = false;
+        this._completeTimer = null;
+        this.buildTags();
+      },
+      update: function (oldData) {
+        if (!oldData || !this._tags) return;
+        if (
+          oldData.words !== this.data.words ||
+          oldData.radius !== this.data.radius
+        ) {
+          this.buildTags();
+        }
+      },
+      buildTags: function () {
+        this.reset();
+        while (this.el.firstChild) {
+          this.el.removeChild(this.el.firstChild);
+        }
+
+        var words = this.data.words.split(',').map(function (w) { return w.trim(); }).filter(Boolean);
+        var radius = this.data.radius;
+        var total = words.length || 1;
+        var slots = [
+          { x: -0.74, y:  0.64 },
+          { x:  0.74, y:  0.64 },
+          { x:  0.98, y:  0.0 },
+          { x:  0.74, y: -0.64 },
+          { x: -0.74, y: -0.64 },
+          { x: -0.98, y:  0.0 }
+        ];
+
+        this._tags = [];
+
+        words.forEach(function (word, i) {
+          var angle = (Math.PI * 2 * i) / total;
+          var slot = slots[i % slots.length];
+          var x = slot ? slot.x : Math.cos(angle) * radius;
+          var y = slot ? slot.y : Math.sin(angle) * radius * 0.72;
+
+          var tag = document.createElement('a-entity');
+          tag.setAttribute('position', '0 0 0.17');
+          tag.setAttribute('scale', '0.001 0.001 0.001');
+
+          var label = document.createElement('a-entity');
+          label.setAttribute('hud-label',
+            'text:' + word + '; width:0.84; height:0.23; bg:rgba(177,18,27,0.72); color:#ffffff; font:56');
+          tag.appendChild(label);
+          this.el.appendChild(tag);
+          this._tags.push({ el: tag, angle: angle, x: x, y: y });
+        }, this);
+      },
+      reset: function () {
+        this._orbiting = false;
+        this._startTime = null;
+        if (this._completeTimer) {
+          clearTimeout(this._completeTimer);
+          this._completeTimer = null;
+        }
+        if (!this._tags) return;
+        this._tags.forEach(function (tagData) {
+          tagData.el.removeAttribute('animation__burstpos');
+          tagData.el.removeAttribute('animation__burstscale');
+          tagData.el.removeAttribute('animation__holdscale');
+          tagData.el.removeAttribute('animation__settlepos');
+          tagData.el.removeAttribute('animation__settlescale');
+          tagData.el.removeAttribute('animation__vortexpos');
+          tagData.el.removeAttribute('animation__vortexscale');
+          tagData.el.removeAttribute('animation__vortexspin');
+          tagData.el.removeAttribute('animation__pulse');
+          tagData.el.setAttribute('position', '0 0 0.17');
+          tagData.el.setAttribute('rotation', '0 0 0');
+          tagData.el.setAttribute('scale', '0.001 0.001 0.001');
+        });
+      },
+      present: function () {
+        this.reset();
+        if (!this._tags) return;
+        var step = this.data.hold + 900;
+
+        this._tags.forEach(function (tagData, i) {
+          var delay = i * step;
+          var moveDelay = delay + this.data.hold;
+
+          tagData.el.setAttribute('animation__burstpos',
+            'property:position; from:0 0 0.17; to:0 0 0.2; dur:320; delay:' + delay + '; easing:easeOutCubic');
+          tagData.el.setAttribute('animation__burstscale',
+            'property:scale; from:0.001 0.001 0.001; to:1.22 1.22 1.22; dur:420; delay:' + delay +
+            '; easing:easeOutBack');
+          tagData.el.setAttribute('animation__holdscale',
+            'property:scale; from:1.22 1.22 1.22; to:1.08 1.08 1.08; dur:260; delay:' + moveDelay +
+            '; easing:easeInOutSine');
+          tagData.el.setAttribute('animation__settlepos',
+            'property:position; from:0 0 0.2; to:' + tagData.x + ' ' + tagData.y +
+            ' 0.17; dur:620; delay:' + moveDelay + '; easing:easeOutCubic');
+          tagData.el.setAttribute('animation__settlescale',
+            'property:scale; from:1.08 1.08 1.08; to:0.96 0.96 0.96; dur:620; delay:' + moveDelay +
+            '; easing:easeOutCubic');
+        }, this);
+
+        var vortexDelay = this._tags.length * step + 400;
+        this._tags.forEach(function (tagData, i) {
+          var delay = vortexDelay + i * 70;
+          tagData.el.setAttribute('animation__vortexspin',
+            'property:rotation; from:0 0 0; to:0 0 720; dur:900; delay:' + delay + '; easing:easeInCubic');
+          tagData.el.setAttribute('animation__vortexpos',
+            'property:position; from:' + tagData.x + ' ' + tagData.y +
+            ' 0.17; to:0 0 0.24; dur:900; delay:' + delay + '; easing:easeInCubic');
+          tagData.el.setAttribute('animation__vortexscale',
+            'property:scale; from:0.96 0.96 0.96; to:0.001 0.001 0.001; dur:520; delay:' + (delay + 380) +
+            '; easing:easeInBack');
+        });
+
+        this._completeTimer = setTimeout(function () {
+          this.el.emit('word-sequence-complete');
+        }.bind(this), vortexDelay + 1300);
+      },
+      startOrbit: function () {
+        this._orbiting = true;
+        this._startTime = null;
+        if (this._tags) {
+          this._tags.forEach(function (tagData) {
+            tagData.el.setAttribute('animation__pulse',
+              'property:scale; from:0.96 0.96 0.96; to:1.04 1.04 1.04; dir:alternate; dur:1500; loop:true; easing:easeInOutSine');
+          });
+        }
+      },
+      tick: function (time) {
+        if (!this._orbiting) return;
+        if (!this._tags || !this._tags.length) return;
+        if (this._startTime === null) this._startTime = time;
+
+        var radius = this.data.radius;
+        var spin = ((time - this._startTime) / this.data.speed) * Math.PI * 2;
+
+        this._tags.forEach(function (tagData) {
+          var angle = tagData.angle + spin;
+          var x = Math.cos(angle) * radius;
+          var y = Math.sin(angle) * radius * 0.72;
+          tagData.el.setAttribute('position', x + ' ' + y + ' 0.16');
+          tagData.el.setAttribute('rotation', '0 0 0');
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <!-- ====================================================
+       TELA INICIAL (SPLASH)
+       ==================================================== -->
+  <div id="splash-screen">
+    <div class="splash-content">
+      <span class="splash-icon">TSA</span>
+      <h1>Tour TSA</h1>
+      <p>
+        Aponte a câmera do seu celular para os adesivos
+        espalhados pelo ambiente e aproveite as informações!
+      </p>
+      <button id="start-btn" onclick="startExperience()">
+        Iniciar Tour
+      </button>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       INSTRUÇÃO INICIAL (aparece ao abrir a câmera AR)
+       ==================================================== -->
+  <div id="ar-welcome" class="hidden">
+    <div class="welcome-card">
+      <p class="welcome-brand">TSA</p>
+      <h2>Bem-vindo ao TSA Tour</h2>
+      <p>Direcione a camera para um adesivo ou imagem de produto e veja a experiencia em AR.</p>
+      <button onclick="dismissWelcome()">Entendido ✓</button>
+      <small>Fecha em <span id="welcome-countdown">6</span>s</small>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       DICA FLUTUANTE
+       ==================================================== -->
+  <div id="ar-hint" class="hidden">
+    <span>Aponte para um adesivo ou imagem de produto</span>
+  </div>
+
+  <div id="ar-dark-overlay" class="hidden"></div>
+
+  <!-- ====================================================
+       MODAL DO VÍDEO
+       ==================================================== -->
+  <div id="video-modal" class="hidden" onclick="handleVideoOverlayClick(event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close-btn" onclick="closeVideoModal()" aria-label="Fechar vídeo">✕</button>
+      </div>
+      <div class="video-container">
+        <video id="modal-video" playsinline controls preload="none"></video>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       MODAL DA COLEÇÃO (CARROSSEL)
+       ==================================================== -->
+  <div id="collection-modal" class="hidden" onclick="handleCollectionOverlayClick(event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="collection-brand-name"></h2>
+        <button class="modal-close-btn" onclick="closeCollectionModal()" aria-label="Fechar coleção">✕</button>
+      </div>
+      <div class="carousel-container">
+        <button class="carousel-nav" onclick="prevCollectionImage()" aria-label="Anterior">&#8249;</button>
+        <div class="carousel-image-wrapper">
+          <img id="carousel-img" src="" alt="Item da coleção" />
+          <p id="carousel-empty" class="carousel-empty hidden">
+            Adicione imagens em<br><code>assets/collections/marca_0N/</code>
+          </p>
+        </div>
+        <button class="carousel-nav" onclick="nextCollectionImage()" aria-label="Próximo">&#8250;</button>
+      </div>
+      <div class="carousel-info">
+        <strong id="carousel-item-name">Item da coleção</strong>
+      </div>
+      <div id="carousel-dots" class="carousel-dots"></div>
+    </div>
+  </div>
+
+  <button id="close-3d-btn" class="hidden" onclick="hideModel3D()" aria-label="Fechar modelo 3D">
+    Fechar 3D
+  </button>
+
+  <!-- ====================================================
+       CENA A-FRAME + MINDAR
+       ==================================================== -->
+  <a-scene
+    id="ar-scene"
+    embedded
+    cursor="rayOrigin: mouse"
+    raycaster="objects: .clickable; far: 10000"
+    mindar-image="imageTargetSrc: ./targets/targets.mind; autoStart: false; uiLoading: yes; uiScanning: no; uiError: yes;"
+    color-space="sRGB"
+    renderer="colorManagement: true; alpha: true; antialias: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-light type="ambient" color="#ffffff" intensity="1.15"></a-light>
+    <a-light type="directional" color="#ffffff" intensity="0.9" position="0.5 1 1"></a-light>
+    <a-light type="directional" color="#ffffff" intensity="1.2" position="-0.8 1.2 1.8"></a-light>
+
+    <!-- ALVO 0 -> aplicação original / Marca 01 -->
+    <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+      <a-entity id="text-group-0" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+        <a-text class="ar-brand" value="Marca 01" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
+        <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-final-cta" hud-label="text:veja mais informações; width:1.55; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 -0.82 0.2" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-text class="ar-phrase" value="Moda urbana com identidade e atitude." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
+      </a-entity>
+
+      <a-entity id="words-group-0" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+        <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
+      </a-entity>
+
+      <a-entity id="lines-group-0" class="lines-group">
+        <a-circle class="ar-center" position="0 0 0.07" radius="0.032" color="#cfd3dc" opacity="0.85" material="shader:flat" visible="false"></a-circle>
+        <a-entity class="ar-scan" scan-frame visible="false"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:-0.32 0.28 0.08; end:-0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.32 0.28 0.08; end:0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.55 0.08 0.08; end:0.61 -0.25 0.1; duration:500"></a-entity>
+      </a-entity>
+
+      <a-entity id="buttons-group-0" class="buttons-group">
+        <a-entity class="ar-btn" position="-0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#e94560" opacity="0.18" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="collection" data-brand="0" radius="0.21" color="#e94560" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:collection" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Galeria" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="3 3 3" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#b1121b" opacity="0.22" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="video" data-brand="0" radius="0.21" color="#b1121b" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:video" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Video" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 -0.34 0.1" scale="0.001 0.001 0.001">
+          <a-entity class="clickable ar-button" data-action="site" data-brand="0" link-button-bg></a-entity>
+          <a-entity ar-icon="type:site" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Site" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- ALVO 1 -> aplicação original / Marca 02 -->
+    <a-entity id="target-1" mindar-image-target="targetIndex: 1">
+      <a-entity id="text-group-1" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+        <a-text class="ar-brand" value="Marca 02" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
+        <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-final-cta" hud-label="text:veja mais informações; width:1.55; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 -0.82 0.2" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-text class="ar-phrase" value="Design autoral para todos os momentos." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
+      </a-entity>
+
+      <a-entity id="words-group-1" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+        <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
+      </a-entity>
+
+      <a-entity id="lines-group-1" class="lines-group">
+        <a-circle class="ar-center" position="0 0 0.07" radius="0.032" color="#cfd3dc" opacity="0.85" material="shader:flat" visible="false"></a-circle>
+        <a-entity class="ar-scan" scan-frame visible="false"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:-0.32 0.28 0.08; end:-0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.32 0.28 0.08; end:0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.55 0.08 0.08; end:0.61 -0.25 0.1; duration:500"></a-entity>
+      </a-entity>
+
+      <a-entity id="buttons-group-1" class="buttons-group">
+        <a-entity class="ar-btn" position="-0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#e94560" opacity="0.18" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="collection" data-brand="1" radius="0.21" color="#e94560" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:collection" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Galeria" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#b1121b" opacity="0.22" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="video" data-brand="1" radius="0.21" color="#b1121b" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:video" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Video" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 -0.34 0.1" scale="0.001 0.001 0.001">
+          <a-entity class="clickable ar-button" data-action="site" data-brand="1" link-button-bg></a-entity>
+          <a-entity ar-icon="type:site" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Site" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- ALVO 2 -> aplicação original / Marca 03 -->
+    <a-entity id="target-2" mindar-image-target="targetIndex: 2">
+      <a-entity id="text-group-2" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+        <a-text class="ar-brand" value="Marca 03" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
+        <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-final-cta" hud-label="text:veja mais informações; width:1.55; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 -0.82 0.2" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-text class="ar-phrase" value="Estilo, conforto e presenca." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
+      </a-entity>
+
+      <a-entity id="words-group-2" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+        <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
+      </a-entity>
+
+      <a-entity id="lines-group-2" class="lines-group">
+        <a-circle class="ar-center" position="0 0 0.07" radius="0.032" color="#cfd3dc" opacity="0.85" material="shader:flat" visible="false"></a-circle>
+        <a-entity class="ar-scan" scan-frame visible="false"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:-0.32 0.28 0.08; end:-0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.32 0.28 0.08; end:0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.55 0.08 0.08; end:0.61 -0.25 0.1; duration:500"></a-entity>
+      </a-entity>
+
+      <a-entity id="buttons-group-2" class="buttons-group">
+        <a-entity class="ar-btn" position="-0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#e94560" opacity="0.18" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="collection" data-brand="2" radius="0.21" color="#e94560" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:collection" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Galeria" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#b1121b" opacity="0.22" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="video" data-brand="2" radius="0.21" color="#b1121b" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:video" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Video" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 -0.34 0.1" scale="0.001 0.001 0.001">
+          <a-entity class="clickable ar-button" data-action="site" data-brand="2" link-button-bg></a-entity>
+          <a-entity ar-icon="type:site" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Site" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- ALVO 3 -> aplicação original / Marca 04 -->
+    <a-entity id="target-3" mindar-image-target="targetIndex: 3">
+      <a-entity id="text-group-3" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+        <a-text class="ar-brand" value="Marca 04" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
+        <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-entity class="ar-final-cta" hud-label="text:veja mais informações; width:1.55; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 -0.82 0.2" scale="0.001 0.001 0.001" visible="false"></a-entity>
+        <a-text class="ar-phrase" value="Novas formas de vestir o futuro." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
+      </a-entity>
+
+      <a-entity id="words-group-3" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+        <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
+      </a-entity>
+
+      <a-entity id="lines-group-3" class="lines-group">
+        <a-circle class="ar-center" position="0 0 0.07" radius="0.032" color="#cfd3dc" opacity="0.85" material="shader:flat" visible="false"></a-circle>
+        <a-entity class="ar-scan" scan-frame visible="false"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:-0.32 0.28 0.08; end:-0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.32 0.28 0.08; end:0.62 0.36 0.1; duration:500"></a-entity>
+        <a-entity class="ar-grow-line" grow-line="start:0 0 0.07; cp:0.55 0.08 0.08; end:0.61 -0.25 0.1; duration:500"></a-entity>
+      </a-entity>
+
+      <a-entity id="buttons-group-3" class="buttons-group">
+        <a-entity class="ar-btn" position="-0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#e94560" opacity="0.18" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="collection" data-brand="3" radius="0.21" color="#e94560" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:collection" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Galeria" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 0.48 0.1" scale="0.001 0.001 0.001">
+          <a-circle radius="0.27" color="#b1121b" opacity="0.22" material="shader:flat"></a-circle>
+          <a-circle class="clickable ar-button" data-action="video" data-brand="3" radius="0.21" color="#b1121b" material="shader:flat"></a-circle>
+          <a-entity ar-icon="type:video" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Video" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+        <a-entity class="ar-btn" position="0.82 -0.34 0.1" scale="0.001 0.001 0.001">
+          <a-entity class="clickable ar-button" data-action="site" data-brand="3" link-button-bg></a-entity>
+          <a-entity ar-icon="type:site" position="0 0 0.025"></a-entity>
+          <a-text class="ar-label" value="Site" position="0 0.38 0.02" align="center" color="#ffffff" width="0.65" scale="2.2 2.2 2.2" visible="false"></a-text>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- ALVO 4 -> produto Camisa TSA -->
+    <a-entity id="product-target-camisa" mindar-image-target="targetIndex: 4">
+      <a-gltf-model
+        src="assets/models/marca_01/camisa.glb"
+        position="0 0 0.16"
+        rotation="0 0 0"
+        scale="0.55 0.55 0.55"
+        product-model-status="name:Camisa TSA"
+        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:8000; easing:linear">
+      </a-gltf-model>
+    </a-entity>
+
+    <!-- ALVO 5 -> produto Boné TSA -->
+    <a-entity id="product-target-bone" mindar-image-target="targetIndex: 5">
+      <a-gltf-model
+        src="assets/models/marca_01/bone.glb"
+        position="0 0 0.16"
+        rotation="0 0 0"
+        scale="0.55 0.55 0.55"
+        product-model-status="name:Boné TSA"
+        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:8000; easing:linear">
+      </a-gltf-model>
+    </a-entity>
+
+    <!-- ALVO 6 -> produto Chaveiro TSA -->
+    <a-entity id="product-target-chaveiro" mindar-image-target="targetIndex: 6">
+      <a-gltf-model
+        src="assets/models/marca_01/chaveiro.glb"
+        position="0 0 0.16"
+        rotation="0 0 0"
+        scale="0.55 0.55 0.55"
+        product-model-status="name:Chaveiro TSA"
+        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:7600; easing:linear">
+      </a-gltf-model>
+    </a-entity>
+  </a-scene>
+
+  <script src="script.js"></script>
+</body>
+</html>
