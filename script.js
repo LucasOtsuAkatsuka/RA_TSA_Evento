@@ -218,7 +218,8 @@ function getIslandSteps(item) {
         order: 2,
         duration: 11200,
         words: item.keywords || [],
-        animation: 'vortex'
+        animation: item.wordAnimation || 'vortex',
+        layout: item.wordLayout || 'circle'
       },
       {
         type: 'actions',
@@ -246,7 +247,8 @@ function getIslandSteps(item) {
         order: 2,
         duration: 11200,
         words: item.keywords || [],
-        animation: 'vortex'
+        animation: item.wordAnimation || 'vortex',
+        layout: item.wordLayout || 'circle'
       },
       {
         type: 'phrase',
@@ -269,6 +271,54 @@ function getIslandSteps(item) {
         model: item.model || '',
         modelScale: item.modelScale || '0.55 0.55 0.55',
         spinSpeed: item.spinSpeed || 45
+      }
+    ];
+  }
+
+  if (feature === 'image') {
+    return [
+      {
+        type: 'image',
+        order: 1,
+        duration: Number(item.imageDuration || 0),
+        image: item.image || '',
+        title: item.imageTitle || '',
+        width: Number(item.imageWidth || 0.82),
+        height: Number(item.imageHeight || 0.56),
+        x: Number(item.imageX || 0),
+        y: Number(item.imageY || 0.05),
+        z: Number(item.imageZ || 0.28),
+        bg: item.imageBg || '#ffffff',
+        titleBg: item.imageTitleBg || 'rgba(177,18,27,0.72)',
+        titleColor: item.imageTitleColor || '#ffffff',
+        titleFont: Number(item.imageTitleFont || 38),
+        interactions: Array.isArray(item.imageInteractions) ? item.imageInteractions : ['float'],
+        spinSpeed: Number(item.imageSpinSpeed || 42),
+        floatAmount: Number(item.imageFloatAmount || 0.06)
+      }
+    ];
+  }
+
+  if (feature === 'carousel3d') {
+    return [
+      {
+        type: 'carousel3d',
+        order: 1,
+        duration: Number(item.carouselDuration || 0),
+        radius: Number(item.carouselRadius || 0.82),
+        speed: Number(item.carouselSpeed || 18),
+        itemWidth: Number(item.carouselItemWidth || 0.52),
+        itemHeight: Number(item.carouselItemHeight || 0.68),
+        modelSize: Number(item.carouselModelSize || 0.46),
+        y: Number(item.carouselY || 0.05),
+        title: item.carouselTitle || '',
+        titleBg: item.carouselTitleBg || 'rgba(177,18,27,0.72)',
+        titleColor: item.carouselTitleColor || '#ffffff',
+        titleFont: Number(item.carouselTitleFont || 50),
+        cardBg: item.carouselCardBg || '#ffffff',
+        itemTitleBg: item.carouselItemTitleBg || 'rgba(177,18,27,0.72)',
+        itemTitleColor: item.carouselItemTitleColor || '#ffffff',
+        itemTitleFont: Number(item.carouselItemTitleFont || 38)
       }
     ];
   }
@@ -382,6 +432,8 @@ function createTrailTarget(brand, dataIndex) {
       '<a-text class="ar-brand" value="" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>' +
       '<a-entity class="ar-intro-line ar-intro-top" hud-label="text:; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
       '<a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
+      '<a-entity class="ar-logo-text" hud-label="text:; width:1.45; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 0 0.22" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
+      '<a-entity class="ar-step-title" hud-label="text:; width:1.58; height:0.28; bg:rgba(177,18,27,0.72); color:#ffffff; font:64; variant:glass" position="0 0.88 0.24" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
       '<a-entity class="ar-final-cta" hud-label="text:veja mais informações; width:1.55; height:0.24; bg:#b1121b; color:#ffffff; font:44; variant:glass" position="0 -0.82 0.2" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
       '<a-text class="ar-phrase" value="" position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>' +
     '</a-entity>' +
@@ -403,6 +455,22 @@ function createTrailTarget(brand, dataIndex) {
     '<a-entity id="model-showcase-' + dataIndex + '" visible="false" position="0 0.15 0.35">' +
       '<a-gltf-model id="active-model-' + dataIndex + '" src="" position="0 0 0" scale="0.25 0.25 0.25" rotation="0 0 0" continuous-spin="axis:y; speed:45" animation__float="property:position; from:0 0 0; to:0 0.08 0; dir:alternate; dur:1800; loop:true; easing:easeInOutSine"></a-gltf-model>' +
       '<a-text id="active-model-label-' + dataIndex + '" value="" position="0 -0.45 0" align="center" color="#ffffff" width="1.2"></a-text>' +
+    '</a-entity>' +
+
+    '<a-entity id="image-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
+      '<a-entity class="ar-image-card">' +
+        '<a-entity class="ar-image-spin">' +
+          '<a-plane class="ar-image-glow" width="0.92" height="0.66" position="0 0 0.006" color="#e94560" opacity="0.18" material="shader:flat; transparent:true" visible="false"></a-plane>' +
+          '<a-plane class="ar-image-bg" width="0.82" height="0.56" position="0 0 0.012" color="#ffffff" material="shader:flat; side:double"></a-plane>' +
+          '<a-plane class="ar-image-plane" width="0.82" height="0.56" position="0 0 0.02" material="shader:flat; transparent:true; side:front"></a-plane>' +
+        '</a-entity>' +
+      '</a-entity>' +
+      '<a-entity class="ar-image-title" hud-label="text:; width:1.1; height:0.18; bg:rgba(177,18,27,0.72); color:#ffffff; font:38; variant:glass" position="0 -0.43 0.05" visible="false"></a-entity>' +
+    '</a-entity>' +
+
+    '<a-entity id="carousel-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
+      '<a-entity class="ar-carousel-stage"></a-entity>' +
+      '<a-entity class="ar-carousel-title" hud-label="text:; width:1.35; height:0.2; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.72 0" visible="false"></a-entity>' +
     '</a-entity>';
 
   return target;
@@ -566,6 +634,8 @@ function registerTargetAnimations() {
     var scanEl    = targetEl.querySelector('.ar-scan');
     var introEls  = Array.from(targetEl.querySelectorAll('.ar-intro-line'));
     var orbitEl   = targetEl.querySelector('.ar-orbit-tags');
+    var logoTextEl = targetEl.querySelector('.ar-logo-text');
+    var stepTitleEl = targetEl.querySelector('.ar-step-title');
     var finalCtaEl = targetEl.querySelector('.ar-final-cta');
     var darkOverlay = document.getElementById('ar-dark-overlay');
     var phraseEl  = targetEl.querySelector('.ar-phrase');
@@ -573,6 +643,16 @@ function registerTargetAnimations() {
     var modelShowcaseEl = targetEl.querySelector('#model-showcase-' + idx);
     var modelEl = targetEl.querySelector('#active-model-' + idx);
     var modelLabelEl = targetEl.querySelector('#active-model-label-' + idx);
+    var imageShowcaseEl = targetEl.querySelector('#image-showcase-' + idx);
+    var imageCardEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-card') : null;
+    var imageSpinEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-spin') : null;
+    var imagePlaneEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-plane') : null;
+    var imageBgEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-bg') : null;
+    var imageGlowEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-glow') : null;
+    var imageTitleEl = imageShowcaseEl ? imageShowcaseEl.querySelector('.ar-image-title') : null;
+    var carouselShowcaseEl = targetEl.querySelector('#carousel-showcase-' + idx);
+    var carouselStageEl = carouselShowcaseEl ? carouselShowcaseEl.querySelector('.ar-carousel-stage') : null;
+    var carouselTitleEl = carouselShowcaseEl ? carouselShowcaseEl.querySelector('.ar-carousel-title') : null;
     var phraseTypingTimer = null;
     var sequenceTimers = [];
 
@@ -647,6 +727,43 @@ function registerTargetAnimations() {
       if (scanEl)   scanEl.setAttribute('visible', false);
       if (darkOverlay) darkOverlay.classList.add('hidden');
       if (modelShowcaseEl) modelShowcaseEl.setAttribute('visible', false);
+      if (imageShowcaseEl) {
+        imageShowcaseEl.setAttribute('visible', false);
+        imageShowcaseEl.removeAttribute('animation__pop');
+        imageShowcaseEl.removeAttribute('animation__float');
+        imageShowcaseEl.removeAttribute('animation__out');
+        imageShowcaseEl.setAttribute('position', '0 0.05 0.28');
+        imageShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
+      }
+      if (imageCardEl) {
+        imageCardEl.removeAttribute('animation__pulse');
+        imageCardEl.removeAttribute('animation__tilt');
+        imageCardEl.setAttribute('rotation', '0 0 0');
+        imageCardEl.setAttribute('scale', '1 1 1');
+      }
+      if (imageSpinEl) {
+        imageSpinEl.removeAttribute('continuous-spin');
+        imageSpinEl.setAttribute('rotation', '0 0 0');
+      }
+      if (imageGlowEl) {
+        imageGlowEl.setAttribute('visible', false);
+        imageGlowEl.removeAttribute('animation__glow');
+      }
+      if (imageTitleEl) imageTitleEl.setAttribute('visible', false);
+      if (carouselShowcaseEl) {
+        carouselShowcaseEl.setAttribute('visible', false);
+        carouselShowcaseEl.removeAttribute('animation__pop');
+        carouselShowcaseEl.removeAttribute('animation__float');
+        carouselShowcaseEl.setAttribute('position', '0 0.05 0.28');
+        carouselShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
+      }
+      if (carouselStageEl) {
+        carouselStageEl.removeAttribute('continuous-spin');
+        while (carouselStageEl.firstChild) {
+          carouselStageEl.removeChild(carouselStageEl.firstChild);
+        }
+      }
+      if (carouselTitleEl) carouselTitleEl.setAttribute('visible', false);
       introEls.forEach(function (el) {
         el.setAttribute('visible', false);
         el.removeAttribute('animation__intro');
@@ -663,6 +780,24 @@ function registerTargetAnimations() {
         if (orbitEl.components && orbitEl.components['orbit-tags']) {
           orbitEl.components['orbit-tags'].reset();
         }
+      }
+      if (logoTextEl) {
+        logoTextEl.setAttribute('visible', false);
+        logoTextEl.removeAttribute('animation__rise');
+        logoTextEl.removeAttribute('animation__expand');
+        logoTextEl.removeAttribute('animation__settle');
+        logoTextEl.removeAttribute('animation__pulse');
+        logoTextEl.removeAttribute('animation__out');
+        logoTextEl.setAttribute('position', '0 0 0.22');
+        logoTextEl.setAttribute('scale', '0.001 0.001 0.001');
+      }
+      if (stepTitleEl) {
+        stepTitleEl.setAttribute('visible', false);
+        stepTitleEl.removeAttribute('animation__in');
+        stepTitleEl.removeAttribute('animation__out');
+        stepTitleEl.removeAttribute('animation__pulse');
+        stepTitleEl.setAttribute('position', '0 0.88 0.24');
+        stepTitleEl.setAttribute('scale', '0.001 0.001 0.001');
       }
       if (finalCtaEl) {
         finalCtaEl.setAttribute('visible', false);
@@ -832,6 +967,15 @@ function registerTargetAnimations() {
         orbitEl.setAttribute('orbit-tags', 'words', nextWords.join(','));
       }
 
+      if (orbitEl) {
+        orbitEl.setAttribute('orbit-tags', 'bg', options.wordBg || 'rgba(177,18,27,0.72)');
+        orbitEl.setAttribute('orbit-tags', 'color', options.wordColor || '#ffffff');
+        orbitEl.setAttribute('orbit-tags', 'font', isFinite(Number(options.wordFont)) ? Number(options.wordFont) : 56);
+        orbitEl.setAttribute('orbit-tags', 'width', isFinite(Number(options.wordWidth)) ? Number(options.wordWidth) : 0.84);
+        orbitEl.setAttribute('orbit-tags', 'height', isFinite(Number(options.wordHeight)) ? Number(options.wordHeight) : 0.23);
+        orbitEl.setAttribute('orbit-tags', 'layout', options.layout || options.wordLayout || 'circle');
+      }
+
       if (!orbitEl || !orbitEl.components || !orbitEl.components['orbit-tags']) {
         next();
         return;
@@ -844,6 +988,8 @@ function registerTargetAnimations() {
         sequenceTimers.push(orbitTimer);
         return;
       }
+
+      var wordAnimation = options.animation || 'vortex';
       var completed = false;
       var done = function () {
         if (completed) return;
@@ -852,7 +998,18 @@ function registerTargetAnimations() {
         next();
       };
       orbitEl.addEventListener('word-sequence-complete', done);
-      burstWords();
+      orbitEl.setAttribute('visible', true);
+      if (wordAnimation === 'wave' && orbitEl.components['orbit-tags'].presentWave) {
+        orbitEl.components['orbit-tags'].presentWave(Number(options.duration || 5200));
+      } else if (wordAnimation === 'spiral' && orbitEl.components['orbit-tags'].presentSpiral) {
+        orbitEl.components['orbit-tags'].presentSpiral(Number(options.duration || 5600));
+      } else if (wordAnimation === 'rain' && orbitEl.components['orbit-tags'].presentRain) {
+        orbitEl.components['orbit-tags'].presentRain(Number(options.duration || 5200));
+      } else if (wordAnimation === 'constellation' && orbitEl.components['orbit-tags'].presentConstellation) {
+        orbitEl.components['orbit-tags'].presentConstellation(Number(options.duration || 5200));
+      } else {
+        burstWords();
+      }
       var fallback = setTimeout(done, Number(options.duration || 11200));
       sequenceTimers.push(fallback);
     }
@@ -901,6 +1058,377 @@ function registerTargetAnimations() {
           phraseTypingTimer = null;
         }
       }, 42);
+    }
+
+    function showStepTitle(options) {
+      if (!stepTitleEl || cancelled) return;
+
+      options = typeof options === 'string' ? { stepTitle: options } : (options || {});
+      var text = options.stepTitle || '';
+      var bg = options.stepTitleBg || 'rgba(177,18,27,0.72)';
+      var color = options.stepTitleColor || '#ffffff';
+      var font = isFinite(Number(options.stepTitleFont)) ? Number(options.stepTitleFont) : 64;
+      var width = isFinite(Number(options.stepTitleWidth)) ? Number(options.stepTitleWidth) : 1.58;
+      var height = isFinite(Number(options.stepTitleHeight)) ? Number(options.stepTitleHeight) : 0.28;
+
+      stepTitleEl.removeAttribute('animation__in');
+      stepTitleEl.removeAttribute('animation__out');
+      stepTitleEl.removeAttribute('animation__pulse');
+
+      if (!text) {
+        stepTitleEl.setAttribute('visible', false);
+        stepTitleEl.setAttribute('scale', '0.001 0.001 0.001');
+        return;
+      }
+
+      stepTitleEl.setAttribute('hud-label', 'text', text);
+      stepTitleEl.setAttribute('hud-label', 'bg', bg);
+      stepTitleEl.setAttribute('hud-label', 'color', color);
+      stepTitleEl.setAttribute('hud-label', 'font', font);
+      stepTitleEl.setAttribute('hud-label', 'width', width);
+      stepTitleEl.setAttribute('hud-label', 'height', height);
+      stepTitleEl.setAttribute('visible', true);
+      stepTitleEl.setAttribute('scale', '0.001 0.001 0.001');
+      stepTitleEl.setAttribute('animation__in',
+        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:320; easing:easeOutBack');
+      stepTitleEl.setAttribute('animation__pulse',
+        'property:scale; from:1 1 1; to:1.035 1.035 1.035; dir:alternate; dur:1600; delay:320; loop:true; easing:easeInOutSine');
+    }
+
+    function hideStepTitle() {
+      if (!stepTitleEl || cancelled || stepTitleEl.getAttribute('visible') === false) return;
+
+      stepTitleEl.removeAttribute('animation__pulse');
+      stepTitleEl.setAttribute('animation__out',
+        'property:scale; from:1 1 1; to:0.001 0.001 0.001; dur:180; easing:easeInBack');
+
+      var titleTimer = setTimeout(function () {
+        if (cancelled || !stepTitleEl) return;
+        stepTitleEl.setAttribute('visible', false);
+        stepTitleEl.removeAttribute('animation__out');
+        stepTitleEl.setAttribute('scale', '0.001 0.001 0.001');
+      }, 200);
+      sequenceTimers.push(titleTimer);
+    }
+
+    function showLogoText(options) {
+      options = options || {};
+      if (!logoTextEl || cancelled) return;
+
+      var text = options.text || '';
+      if (!text) return;
+
+      var x = isFinite(Number(options.x)) ? Number(options.x) : 0;
+      var y = isFinite(Number(options.y)) ? Number(options.y) : 0.72;
+      var z = 0.22;
+      var width = isFinite(Number(options.width)) ? Number(options.width) : 1.45;
+      var height = isFinite(Number(options.height)) ? Number(options.height) : 0.24;
+      var font = isFinite(Number(options.font)) ? Number(options.font) : 44;
+      var bg = options.bg || 'rgba(177,18,27,0.72)';
+      var color = options.color || '#ffffff';
+      var totalDuration = Math.max(500, Number(options.duration || 1600));
+      var duration = Math.min(900, Math.max(300, Math.round(totalDuration * 0.62)));
+      var settleDelay = Math.max(160, Math.round(duration * 0.72));
+
+      logoTextEl.removeAttribute('animation__rise');
+      logoTextEl.removeAttribute('animation__expand');
+      logoTextEl.removeAttribute('animation__settle');
+      logoTextEl.removeAttribute('animation__pulse');
+      logoTextEl.removeAttribute('animation__out');
+      logoTextEl.setAttribute('hud-label', 'text', text);
+      logoTextEl.setAttribute('hud-label', 'width', width);
+      logoTextEl.setAttribute('hud-label', 'height', height);
+      logoTextEl.setAttribute('hud-label', 'font', font);
+      logoTextEl.setAttribute('hud-label', 'bg', bg);
+      logoTextEl.setAttribute('hud-label', 'color', color);
+      logoTextEl.setAttribute('position', '0 0 ' + z);
+      logoTextEl.setAttribute('scale', '0.001 0.001 0.001');
+      logoTextEl.setAttribute('visible', true);
+      logoTextEl.setAttribute('animation__rise',
+        'property:position; from:0 0 ' + z + '; to:' + x + ' ' + y + ' ' + z +
+        '; dur:' + duration + '; easing:easeOutCubic');
+      logoTextEl.setAttribute('animation__expand',
+        'property:scale; from:0.001 0.001 0.001; to:1.12 1.12 1.12; dur:' + settleDelay +
+        '; easing:easeOutBack');
+      logoTextEl.setAttribute('animation__settle',
+        'property:scale; from:1.12 1.12 1.12; to:1 1 1; dur:260; delay:' + settleDelay +
+        '; easing:easeInOutSine');
+      logoTextEl.setAttribute('animation__pulse',
+        'property:scale; from:1 1 1; to:1.035 1.035 1.035; dir:alternate; dur:1600; delay:' +
+        (settleDelay + 260) + '; loop:true; easing:easeInOutSine');
+    }
+
+    function hideLogoText() {
+      if (!logoTextEl || cancelled) return;
+
+      logoTextEl.removeAttribute('animation__pulse');
+      logoTextEl.setAttribute('animation__out',
+        'property:scale; from:1 1 1; to:0.001 0.001 0.001; dur:240; easing:easeInBack');
+
+      var hideTimer = setTimeout(function () {
+        if (cancelled || !logoTextEl) return;
+        logoTextEl.setAttribute('visible', false);
+        logoTextEl.removeAttribute('animation__out');
+        logoTextEl.setAttribute('position', '0 0 0.22');
+        logoTextEl.setAttribute('scale', '0.001 0.001 0.001');
+      }, 260);
+      sequenceTimers.push(hideTimer);
+    }
+
+    function normalizeCarouselItems(items) {
+      return (Array.isArray(items) ? items : [])
+        .map(function (item) {
+          if (typeof item === 'string') {
+            return { name: 'Item', title: '', image: item, model: '' };
+          }
+          return {
+            name: item && item.name ? item.name : 'Item',
+            title: item && item.title ? item.title : '',
+            image: item && item.image ? item.image : '',
+            model: item && item.model ? item.model : '',
+            modelScale: item && item.modelScale ? item.modelScale : '',
+            spinSpeed: item && item.spinSpeed ? item.spinSpeed : ''
+          };
+        })
+        .filter(function (item) { return item.image || item.model; });
+    }
+
+    function makeCarouselLabel(item, options, width, height) {
+      var text = (item && (item.title || item.name)) || '';
+      if (!text) return null;
+
+      var label = document.createElement('a-entity');
+      var labelWidth = Number(options.itemTitleWidth || Math.max(width, 0.68));
+      var labelHeight = Number(options.itemTitleHeight || 0.16);
+
+      label.setAttribute('position', '0 ' + (-(height / 2) - 0.12) + ' 0.06');
+      label.setAttribute('hud-label', 'text', text);
+      label.setAttribute('hud-label', 'width', labelWidth);
+      label.setAttribute('hud-label', 'height', labelHeight);
+      label.setAttribute('hud-label', 'bg', options.itemTitleBg || 'rgba(177,18,27,0.72)');
+      label.setAttribute('hud-label', 'color', options.itemTitleColor || '#ffffff');
+      label.setAttribute('hud-label', 'font', isFinite(Number(options.itemTitleFont)) ? Number(options.itemTitleFont) : 38);
+      label.setAttribute('hud-label', 'variant', 'glass');
+      return label;
+    }
+
+    function createCarouselCard(item, index, total, options) {
+      var radius = Number(options.radius || Math.max(0.72, total * 0.12));
+      var width = Number(options.itemWidth || 0.52);
+      var height = Number(options.itemHeight || 0.68);
+      var cardBg = options.cardBg || '#ffffff';
+      var angle = (Math.PI * 2 * index) / Math.max(total, 1);
+      var angleDeg = THREE.MathUtils.radToDeg(angle);
+      var x = Math.sin(angle) * radius;
+      var z = Math.cos(angle) * radius;
+      var card = document.createElement('a-entity');
+
+      card.setAttribute('position', x + ' 0 ' + z);
+      card.setAttribute('rotation', '0 ' + angleDeg + ' 0');
+      card.setAttribute('scale', '0.001 0.001 0.001');
+      card.setAttribute('animation__in',
+        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:420; delay:' +
+        (index * 90) + '; easing:easeOutBack');
+
+      if (item.model) {
+        var model = document.createElement('a-gltf-model');
+        model.setAttribute('src', withAssetCacheBuster(item.model));
+        model.setAttribute('position', '0 0.04 0.06');
+        model.setAttribute('rotation', '0 0 0');
+        model.setAttribute('scale', item.modelScale || options.modelScale || '0.45 0.45 0.45');
+        model.setAttribute('fit-gltf-model', 'size: ' + Number(options.modelSize || 0.46));
+        model.setAttribute('continuous-spin', 'axis:y; speed:' + Number(item.spinSpeed || options.itemSpinSpeed || 28));
+        card.appendChild(model);
+      } else {
+        var backing = document.createElement('a-plane');
+        backing.setAttribute('position', '0 0 0.018');
+        backing.setAttribute('width', width);
+        backing.setAttribute('height', height);
+        backing.setAttribute('material', {
+          shader: 'flat',
+          color: cardBg,
+          transparent: false,
+          side: 'double'
+        });
+        card.appendChild(backing);
+
+        var plane = document.createElement('a-plane');
+        plane.setAttribute('position', '0 0 0.025');
+        plane.setAttribute('width', width);
+        plane.setAttribute('height', height);
+        plane.setAttribute('material', {
+          shader: 'flat',
+          src: withAssetCacheBuster(item.image),
+          transparent: true,
+          side: 'front'
+        });
+        card.appendChild(plane);
+      }
+
+      var label = makeCarouselLabel(item, options, width, height);
+      if (label) card.appendChild(label);
+
+      return card;
+    }
+
+    function normalizeImageInteractions(value) {
+      return (Array.isArray(value) ? value : String(value || '').split(/\n|,/))
+        .map(function (item) { return String(item).trim(); })
+        .filter(Boolean);
+    }
+
+    function setImageGlowSize(width, height) {
+      if (!imageGlowEl) return;
+      imageGlowEl.setAttribute('width', width + 0.1);
+      imageGlowEl.setAttribute('height', height + 0.1);
+    }
+
+    function hideImageShowcase() {
+      if (!imageShowcaseEl || cancelled) return;
+      imageShowcaseEl.removeAttribute('animation__float');
+      imageShowcaseEl.setAttribute('animation__out',
+        'property:scale; from:1 1 1; to:0.001 0.001 0.001; dur:220; easing:easeInBack');
+      var hideTimer = setTimeout(function () {
+        if (cancelled || !imageShowcaseEl) return;
+        imageShowcaseEl.setAttribute('visible', false);
+        imageShowcaseEl.removeAttribute('animation__out');
+      }, 240);
+      sequenceTimers.push(hideTimer);
+    }
+
+    function showImageShowcase(options) {
+      options = options || {};
+      if (!imageShowcaseEl || !imagePlaneEl || cancelled) return;
+
+      var brandData = brandsData[idx] || {};
+      var src = options.image || brandData.image || '';
+      if (!src) {
+        showErrorMessage('Esta ilha nao tem imagem configurada.');
+        return;
+      }
+
+      var width = isFinite(Number(options.width)) ? Number(options.width) : Number(brandData.imageWidth || 0.82);
+      var height = isFinite(Number(options.height)) ? Number(options.height) : Number(brandData.imageHeight || 0.56);
+      var x = isFinite(Number(options.x)) ? Number(options.x) : Number(brandData.imageX || 0);
+      var y = isFinite(Number(options.y)) ? Number(options.y) : Number(brandData.imageY || 0.05);
+      var z = isFinite(Number(options.z)) ? Number(options.z) : Number(brandData.imageZ || 0.28);
+      var bg = options.bg || brandData.imageBg || '#ffffff';
+      var interactions = normalizeImageInteractions(options.interactions || brandData.imageInteractions || ['float']);
+      var hasInteraction = function (name) { return interactions.indexOf(name) !== -1; };
+
+      imageShowcaseEl.removeAttribute('animation__pop');
+      imageShowcaseEl.removeAttribute('animation__float');
+      imageShowcaseEl.removeAttribute('animation__out');
+      imageShowcaseEl.setAttribute('position', x + ' ' + y + ' ' + z);
+      imageShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
+      imageShowcaseEl.setAttribute('visible', true);
+
+      if (imageCardEl) {
+        imageCardEl.removeAttribute('animation__pulse');
+        imageCardEl.removeAttribute('animation__tilt');
+        imageCardEl.setAttribute('rotation', '0 0 0');
+        imageCardEl.setAttribute('scale', '1 1 1');
+      }
+      if (imageSpinEl) {
+        imageSpinEl.removeAttribute('continuous-spin');
+        imageSpinEl.setAttribute('rotation', '0 0 0');
+      }
+      if (imageBgEl) {
+        imageBgEl.setAttribute('width', width);
+        imageBgEl.setAttribute('height', height);
+        imageBgEl.setAttribute('color', bg);
+        imageBgEl.setAttribute('visible', bg !== 'transparent');
+      }
+      if (imageGlowEl) {
+        setImageGlowSize(width, height);
+        imageGlowEl.setAttribute('visible', hasInteraction('glow'));
+        imageGlowEl.removeAttribute('animation__glow');
+        if (hasInteraction('glow')) {
+          imageGlowEl.setAttribute('animation__glow',
+            'property:opacity; from:0.12; to:0.34; dir:alternate; dur:1200; loop:true; easing:easeInOutSine');
+        }
+      }
+
+      imagePlaneEl.setAttribute('width', width);
+      imagePlaneEl.setAttribute('height', height);
+      imagePlaneEl.setAttribute('material', {
+        shader: 'flat',
+        src: withAssetCacheBuster(src),
+        transparent: true,
+        side: 'front'
+      });
+
+      if (imageTitleEl) {
+        var title = options.title || brandData.imageTitle || '';
+        imageTitleEl.setAttribute('hud-label', 'text', title);
+        imageTitleEl.setAttribute('hud-label', 'bg', options.titleBg || brandData.imageTitleBg || 'rgba(177,18,27,0.72)');
+        imageTitleEl.setAttribute('hud-label', 'color', options.titleColor || brandData.imageTitleColor || '#ffffff');
+        imageTitleEl.setAttribute('hud-label', 'font', isFinite(Number(options.titleFont)) ? Number(options.titleFont) : Number(brandData.imageTitleFont || 38));
+        imageTitleEl.setAttribute('hud-label', 'width', Math.max(width, 0.9));
+        imageTitleEl.setAttribute('position', '0 ' + (-(height / 2) - 0.15) + ' 0.05');
+        imageTitleEl.setAttribute('visible', !!title);
+      }
+
+      imageShowcaseEl.setAttribute('animation__pop',
+        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack');
+
+      if (hasInteraction('float')) {
+        var floatAmount = isFinite(Number(options.floatAmount)) ? Number(options.floatAmount) : Number(brandData.imageFloatAmount || 0.06);
+        imageShowcaseEl.setAttribute('animation__float',
+          'property:position; from:' + x + ' ' + y + ' ' + z + '; to:' + x + ' ' + (y + floatAmount) + ' ' + z +
+          '; dir:alternate; dur:1900; loop:true; easing:easeInOutSine');
+      }
+      if (hasInteraction('spin') && imageSpinEl) {
+        var spinSpeed = isFinite(Number(options.spinSpeed)) ? Number(options.spinSpeed) : Number(brandData.imageSpinSpeed || 42);
+        imageSpinEl.setAttribute('continuous-spin', 'axis:z; speed:' + spinSpeed);
+      }
+      if (hasInteraction('pulse') && imageCardEl) {
+        imageCardEl.setAttribute('animation__pulse',
+          'property:scale; from:1 1 1; to:1.055 1.055 1.055; dir:alternate; dur:1300; loop:true; easing:easeInOutSine');
+      }
+      if (hasInteraction('tilt') && imageCardEl) {
+        imageCardEl.setAttribute('animation__tilt',
+          'property:rotation; from:0 -8 0; to:0 8 0; dir:alternate; dur:1600; loop:true; easing:easeInOutSine');
+      }
+    }
+
+    function showCarousel3D(options) {
+      options = options || {};
+      if (!carouselShowcaseEl || !carouselStageEl || cancelled) return;
+
+      var brandData = brandsData[idx] || {};
+      var items = normalizeCarouselItems(options.items || brandData.collection || []);
+      if (!items.length) {
+        showErrorMessage('Esta ilha nao tem itens configurados para o carrossel 3D.');
+        return;
+      }
+
+      while (carouselStageEl.firstChild) {
+        carouselStageEl.removeChild(carouselStageEl.firstChild);
+      }
+
+      items.forEach(function (item, index) {
+        carouselStageEl.appendChild(createCarouselCard(item, index, items.length, options));
+      });
+
+      carouselStageEl.setAttribute('continuous-spin', 'axis:y; speed:' + Number(options.speed || 18));
+
+      if (carouselTitleEl) {
+        var title = options.title || brandData.carouselTitle || '';
+        carouselTitleEl.setAttribute('hud-label', 'text', title);
+        carouselTitleEl.setAttribute('hud-label', 'bg', options.titleBg || brandData.carouselTitleBg || 'rgba(177,18,27,0.72)');
+        carouselTitleEl.setAttribute('hud-label', 'color', options.titleColor || brandData.carouselTitleColor || '#ffffff');
+        carouselTitleEl.setAttribute('hud-label', 'font', isFinite(Number(options.titleFont)) ? Number(options.titleFont) : Number(brandData.carouselTitleFont || 50));
+        carouselTitleEl.setAttribute('visible', !!title);
+      }
+
+      carouselShowcaseEl.setAttribute('position', '0 ' + Number(options.y || 0.05) + ' 0.28');
+      carouselShowcaseEl.setAttribute('visible', true);
+      carouselShowcaseEl.setAttribute('animation__pop',
+        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:520; easing:easeOutBack');
+      carouselShowcaseEl.setAttribute('animation__float',
+        'property:position; from:0 ' + Number(options.y || 0.05) + ' 0.28; to:0 ' +
+        (Number(options.y || 0.05) + 0.055) + ' 0.28; dir:alternate; dur:2100; loop:true; easing:easeInOutSine');
     }
 
     function showIslandModel(options) {
@@ -998,6 +1526,19 @@ function registerTargetAnimations() {
           fn: function (next) {
             var type = step.type || 'scanner';
             var actionName = getFeatureAction(type);
+            showStepTitle(step);
+
+            if (type === 'logoText') {
+              showLogoText(step);
+              var logoTextTimer = setTimeout(function () {
+                hideStepTitle();
+                hideLogoText();
+                var logoTextNextTimer = setTimeout(next, 280);
+                sequenceTimers.push(logoTextNextTimer);
+              }, Number(step.duration || 1600));
+              sequenceTimers.push(logoTextTimer);
+              return;
+            }
 
             if (type === 'scanner') {
               setIntroText('.ar-intro-top', step.introTop || '');
@@ -1005,6 +1546,7 @@ function registerTargetAnimations() {
               if (centerEl) centerEl.setAttribute('visible', true);
               showIntro(step);
               var introTimer = setTimeout(function () {
+                hideStepTitle();
                 hideIntro();
                 next();
               }, Number(step.duration || 4200));
@@ -1013,13 +1555,19 @@ function registerTargetAnimations() {
             }
 
             if (type === 'words') {
-              playWordSequence(next, step);
+              playWordSequence(function () {
+                hideStepTitle();
+                next();
+              }, step);
               return;
             }
 
             if (type === 'phrase') {
               typePhrase(step);
-              var phraseTimer = setTimeout(next, Number(step.duration || 1800));
+              var phraseTimer = setTimeout(function () {
+                hideStepTitle();
+                next();
+              }, Number(step.duration || 1800));
               sequenceTimers.push(phraseTimer);
               return;
             }
@@ -1031,7 +1579,10 @@ function registerTargetAnimations() {
                 if (scanEl) scanEl.setAttribute('visible', false);
                 showIslandModel(step);
                 if (Number(step.duration || 0) > 0) {
-                  var modelTimer = setTimeout(next, Number(step.duration || 0));
+                  var modelTimer = setTimeout(function () {
+                    hideStepTitle();
+                    next();
+                  }, Number(step.duration || 0));
                   sequenceTimers.push(modelTimer);
                 } else {
                   next();
@@ -1041,10 +1592,45 @@ function registerTargetAnimations() {
               return;
             }
 
+            if (type === 'carousel3d') {
+              if (centerEl) centerEl.setAttribute('visible', true);
+              showCarousel3D(step);
+              if (Number(step.duration || 0) > 0) {
+                var carouselTimer = setTimeout(function () {
+                  hideStepTitle();
+                  next();
+                }, Number(step.duration || 0));
+                sequenceTimers.push(carouselTimer);
+              } else {
+                next();
+              }
+              return;
+            }
+
+            if (type === 'image') {
+              if (centerEl) centerEl.setAttribute('visible', true);
+              showImageShowcase(step);
+              if (Number(step.duration || 0) > 0) {
+                var imageTimer = setTimeout(function () {
+                  hideStepTitle();
+                  hideImageShowcase();
+                  var imageNextTimer = setTimeout(next, 260);
+                  sequenceTimers.push(imageNextTimer);
+                }, Number(step.duration || 0));
+                sequenceTimers.push(imageTimer);
+              } else {
+                next();
+              }
+              return;
+            }
+
             if (type === 'actions') {
               playActions(step.actions || [], step.cta || getFeatureCta(feature), function () {
                 if (Number(step.duration || 0) > 0) {
-                  var actionsTimer = setTimeout(next, Number(step.duration || 0));
+                  var actionsTimer = setTimeout(function () {
+                    hideStepTitle();
+                    next();
+                  }, Number(step.duration || 0));
                   sequenceTimers.push(actionsTimer);
                 } else {
                   next();
@@ -1056,7 +1642,10 @@ function registerTargetAnimations() {
             if (actionName) {
               playActions([actionName], step.cta || getFeatureCta(type), function () {
                 if (Number(step.duration || 0) > 0) {
-                  var actionTimer = setTimeout(next, Number(step.duration || 0));
+                  var actionTimer = setTimeout(function () {
+                    hideStepTitle();
+                    next();
+                  }, Number(step.duration || 0));
                   sequenceTimers.push(actionTimer);
                 } else {
                   next();
@@ -1393,7 +1982,7 @@ function updateCollectionCarousel() {
   var item   = getCollectionItem(currentBrandIdx, currentImageIdx);
   var src    = item && item.image ? item.image : '';
 
-  if (nameEl) nameEl.textContent = item && item.name ? item.name : 'Item da coleção';
+  if (nameEl) nameEl.textContent = item && (item.title || item.name) ? (item.title || item.name) : 'Item da coleção';
   var hasModel = !!(item && item.model);
   modelBtns.forEach(function (modelBtn) {
     modelBtn.disabled = !hasModel;

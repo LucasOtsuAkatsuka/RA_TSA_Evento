@@ -236,6 +236,35 @@ h1 {
   resize: vertical;
 }
 
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.field .checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0.58rem 0.7rem;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.field .checkbox-option input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--red);
+}
+
 .field input:focus,
 .field textarea:focus,
 .field select:focus {
@@ -279,6 +308,7 @@ h1 {
 
 .editor-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.7rem;
   margin-top: 1rem;
@@ -288,6 +318,11 @@ h1 {
   display: grid;
   gap: 0.8rem;
   margin-top: 0.85rem;
+}
+
+.collection-list.full,
+.editor-actions.full {
+  grid-column: 1 / -1;
 }
 
 .collection-item {

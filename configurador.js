@@ -15,11 +15,14 @@ var FEATURE_OPTIONS = [
   { value: 'info', label: 'Informacao / frases e palavras' },
   { value: 'video', label: 'Video' },
   { value: 'site', label: 'Link externo' },
+  { value: 'image', label: 'Imagem interativa' },
   { value: 'collection', label: 'Galeria de imagens' },
+  { value: 'carousel3d', label: 'Carrossel 3D' },
   { value: 'model3d', label: 'Modelo 3D direto' }
 ];
 
 var STEP_TYPE_OPTIONS = [
+  { value: 'logoText', label: 'Texto saindo do logo' },
   { value: 'scanner', label: 'Scanner + frases de entrada' },
   { value: 'phrase', label: 'Frase digitada' },
   { value: 'words', label: 'Palavras futuristas' },
@@ -27,12 +30,34 @@ var STEP_TYPE_OPTIONS = [
   { value: 'collection', label: 'Icone Galeria' },
   { value: 'video', label: 'Icone Video' },
   { value: 'site', label: 'Icone Site' },
+  { value: 'image', label: 'Imagem' },
+  { value: 'carousel3d', label: 'Carrossel 3D' },
   { value: 'model3d', label: 'Modelo 3D' }
 ];
 
 var WORD_ANIMATION_OPTIONS = [
   { value: 'vortex', label: 'Vortex + orbita' },
-  { value: 'orbit', label: 'Orbita direta' }
+  { value: 'orbit', label: 'Orbita direta' },
+  { value: 'wave', label: 'Onda magnetica' },
+  { value: 'spiral', label: 'Espiral 3D' },
+  { value: 'rain', label: 'Chuva neon' },
+  { value: 'constellation', label: 'Constelacao' }
+];
+
+var WORD_LAYOUT_OPTIONS = [
+  { value: 'circle', label: 'Circular' },
+  { value: 'row', label: 'Linha horizontal' },
+  { value: 'column', label: 'Linha vertical' },
+  { value: 'diagonal', label: 'Diagonal' },
+  { value: 'grid', label: 'Grade compacta' }
+];
+
+var IMAGE_INTERACTION_OPTIONS = [
+  { value: 'spin', label: 'Giro 360' },
+  { value: 'float', label: 'Flutuar' },
+  { value: 'pulse', label: 'Pulsar' },
+  { value: 'tilt', label: 'Inclinar' },
+  { value: 'glow', label: 'Brilho' }
 ];
 
 window.addEventListener('DOMContentLoaded', function () {
@@ -185,11 +210,13 @@ function renderEditor() {
   bindEditorEvents(point);
 }
 
-function fieldHtml(field, label, value, type) {
+function fieldHtml(field, label, value, type, stepValue) {
   return (
     '<div class="field">' +
       '<label for="field-' + field + '">' + escapeHtml(label) + '</label>' +
-      '<input id="field-' + field + '" type="' + type + '" data-point-field="' + field + '" value="' + escapeHtml(String(value)) + '" />' +
+      '<input id="field-' + field + '" type="' + type + '" data-point-field="' + field + '"' +
+        (stepValue ? ' step="' + escapeHtml(stepValue) + '"' : '') +
+        ' value="' + escapeHtml(String(value)) + '" />' +
     '</div>'
   );
 }
@@ -199,6 +226,31 @@ function textareaHtml(field, label, value) {
     '<div class="field full">' +
       '<label for="field-' + field + '">' + escapeHtml(label) + '</label>' +
       '<textarea id="field-' + field + '" data-point-field="' + field + '">' + escapeHtml(String(value)) + '</textarea>' +
+    '</div>'
+  );
+}
+
+function checkboxGroupHtml(field, label, selected, options) {
+  var selectedMap = {};
+  (Array.isArray(selected) ? selected : String(selected || '').split(/\n|,/))
+    .map(function (item) { return String(item).trim(); })
+    .filter(Boolean)
+    .forEach(function (item) { selectedMap[item] = true; });
+
+  return (
+    '<div class="field full checkbox-field">' +
+      '<label>' + escapeHtml(label) + '</label>' +
+      '<div class="checkbox-grid">' +
+        options.map(function (option) {
+          return (
+            '<label class="checkbox-option">' +
+              '<input type="checkbox" data-point-multi="' + escapeHtml(field) + '" value="' + escapeHtml(option.value) + '"' +
+                (selectedMap[option.value] ? ' checked' : '') + ' />' +
+              '<span>' + escapeHtml(option.label) + '</span>' +
+            '</label>'
+          );
+        }).join('') +
+      '</div>' +
     '</div>'
   );
 }
@@ -214,7 +266,7 @@ function selectHtml(field, label, value, options) {
             escapeHtml(option.label) + '</option>';
         }).join('') +
       '</select>' +
-      '<span class="upload-hint">Use Sequencia personalizada para combinar varios blocos na mesma ilha.</span>' +
+      (field === 'feature' ? '<span class="upload-hint">Use Sequencia personalizada para combinar varios blocos na mesma ilha.</span>' : '') +
     '</div>'
   );
 }
@@ -242,24 +294,10 @@ function featureEditorHtml(point) {
         '<p class="note">Monte a ordem dos blocos que aparecem depois do scan. Ordem menor aparece primeiro; duracao e atraso sao em milissegundos.</p>' +
         '<div id="sequence-list" class="sequence-list">' + sequenceHtml(point.steps) + '</div>' +
         '<div class="editor-actions">' +
+          '<button id="add-logo-text-step-btn" type="button" class="secondary">Adicionar texto inicial</button>' +
+          '<button id="add-image-step-btn" type="button" class="secondary">Adicionar imagem</button>' +
+          '<button id="add-carousel-step-btn" type="button" class="secondary">Adicionar carrossel 3D</button>' +
           '<button id="add-sequence-step-btn" type="button">Adicionar funcionalidade</button>' +
-        '</div>' +
-      '</section>' +
-      '<section class="feature-card">' +
-        '<h2>Conteudos usados pelos blocos</h2>' +
-        '<div class="editor-grid">' +
-          fieldHtml('video', 'Caminho do video', point.video || '', 'text') +
-          uploadHtml('video-file', 'Enviar video desta ilha', point._videoFile) +
-          fieldHtml('site', 'Link do site', point.site || '', 'text') +
-          fieldHtml('model', 'Caminho do GLB / GLTF', point.model || '', 'text') +
-          uploadHtml('model-file', 'Enviar GLB / GLTF desta ilha', point._modelFile) +
-          fieldHtml('modelScale', 'Escala padrao do modelo', point.modelScale || '0.55 0.55 0.55', 'text') +
-          fieldHtml('spinSpeed', 'Velocidade padrao de giro', point.spinSpeed || 45, 'number') +
-        '</div>' +
-        '<h2>Galeria usada pelos blocos</h2>' +
-        '<div id="collection-list" class="collection-list">' + collectionHtml(point.collection) + '</div>' +
-        '<div class="editor-actions">' +
-          '<button id="add-collection-item-btn" type="button">Adicionar item</button>' +
         '</div>' +
       '</section>'
     );
@@ -288,11 +326,66 @@ function featureEditorHtml(point) {
     );
   }
 
+  if (feature === 'image') {
+    return (
+      '<section class="feature-card">' +
+        '<h2>Funcionalidade: Imagem interativa</h2>' +
+        '<div class="editor-grid">' +
+          fieldHtml('image', 'Caminho da imagem', point.image || '', 'text') +
+          uploadHtml('image-file', 'Enviar imagem desta ilha', point._imageFile) +
+          fieldHtml('imageTitle', 'Titulo da imagem', point.imageTitle || '', 'text') +
+          fieldHtml('imageWidth', 'Largura da imagem', point.imageWidth || 0.82, 'number', '0.01') +
+          fieldHtml('imageHeight', 'Altura da imagem', point.imageHeight || 0.56, 'number', '0.01') +
+          fieldHtml('imageX', 'Posicao X', point.imageX || 0, 'number', '0.01') +
+          fieldHtml('imageY', 'Posicao Y', point.imageY || 0.05, 'number', '0.01') +
+          fieldHtml('imageZ', 'Posicao Z', point.imageZ || 0.28, 'number', '0.01') +
+          fieldHtml('imageBg', 'Cor do fundo da imagem', point.imageBg || '#ffffff', 'text') +
+          fieldHtml('imageTitleBg', 'Cor do fundo do titulo', point.imageTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+          fieldHtml('imageTitleColor', 'Cor do titulo', point.imageTitleColor || '#ffffff', 'text') +
+          fieldHtml('imageTitleFont', 'Fonte do titulo', point.imageTitleFont || 38, 'number') +
+          fieldHtml('imageSpinSpeed', 'Velocidade do giro', point.imageSpinSpeed || 42, 'number') +
+          fieldHtml('imageFloatAmount', 'Intensidade da flutuacao', point.imageFloatAmount || 0.06, 'number', '0.01') +
+          checkboxGroupHtml('imageInteractions', 'Interacoes da imagem', point.imageInteractions || ['float'], IMAGE_INTERACTION_OPTIONS) +
+        '</div>' +
+      '</section>'
+    );
+  }
+
   if (feature === 'collection') {
     return (
       '<section class="feature-card">' +
         '<h2>Funcionalidade: Galeria de imagens</h2>' +
-        '<p class="note">Esta ilha abre somente a galeria. Modelos 3D ficam em ilhas do tipo Modelo 3D direto.</p>' +
+        '<p class="note">Esta ilha abre somente a galeria em modal. Para uma galeria em AR, use Carrossel 3D.</p>' +
+        '<div id="collection-list" class="collection-list">' + collectionHtml(point.collection) + '</div>' +
+        '<div class="editor-actions">' +
+          '<button id="add-collection-item-btn" type="button">Adicionar item</button>' +
+        '</div>' +
+      '</section>'
+    );
+  }
+
+  if (feature === 'carousel3d') {
+    return (
+      '<section class="feature-card">' +
+        '<h2>Funcionalidade: Carrossel 3D</h2>' +
+        '<p class="note">Cada item abaixo vira um card no espaco AR. Se o item tiver modelo 3D, o modelo aparece; se nao tiver, aparece a imagem.</p>' +
+        '<div class="editor-grid">' +
+          fieldHtml('carouselTitle', 'Titulo do carrossel', point.carouselTitle || '', 'text') +
+          fieldHtml('carouselTitleBg', 'Cor do fundo do titulo', point.carouselTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+          fieldHtml('carouselTitleColor', 'Cor do titulo', point.carouselTitleColor || '#ffffff', 'text') +
+          fieldHtml('carouselTitleFont', 'Tamanho da fonte do titulo', point.carouselTitleFont || 50, 'number') +
+          fieldHtml('carouselRadius', 'Raio do carrossel', point.carouselRadius || 0.82, 'number', '0.01') +
+          fieldHtml('carouselSpeed', 'Velocidade de giro', point.carouselSpeed || 18, 'number') +
+          fieldHtml('carouselItemWidth', 'Largura dos cards', point.carouselItemWidth || 0.52, 'number', '0.01') +
+          fieldHtml('carouselItemHeight', 'Altura dos cards', point.carouselItemHeight || 0.68, 'number', '0.01') +
+          fieldHtml('carouselCardBg', 'Cor do fundo das imagens', point.carouselCardBg || '#ffffff', 'text') +
+          fieldHtml('carouselItemTitleBg', 'Cor do fundo das legendas', point.carouselItemTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+          fieldHtml('carouselItemTitleColor', 'Cor das legendas', point.carouselItemTitleColor || '#ffffff', 'text') +
+          fieldHtml('carouselItemTitleFont', 'Tamanho da fonte das legendas', point.carouselItemTitleFont || 38, 'number') +
+          fieldHtml('carouselModelSize', 'Tamanho dos modelos 3D', point.carouselModelSize || 0.46, 'number', '0.01') +
+          fieldHtml('carouselY', 'Posicao Y do carrossel', point.carouselY || 0.05, 'number', '0.01') +
+        '</div>' +
+        '<h2>Itens do carrossel</h2>' +
         '<div id="collection-list" class="collection-list">' + collectionHtml(point.collection) + '</div>' +
         '<div class="editor-actions">' +
           '<button id="add-collection-item-btn" type="button">Adicionar item</button>' +
@@ -325,6 +418,8 @@ function featureEditorHtml(point) {
           textareaHtml('introTop', 'Frase de cima', point.introTop || '') +
           textareaHtml('introBottom', 'Frase de baixo', point.introBottom || '') +
           textareaHtml('keywords', 'Palavras futuristas, uma por linha', (point.keywords || []).join('\n')) +
+          selectHtml('wordAnimation', 'Animacao das palavras', point.wordAnimation || 'vortex', WORD_ANIMATION_OPTIONS) +
+          selectHtml('wordLayout', 'Posicionamento das palavras', point.wordLayout || 'circle', WORD_LAYOUT_OPTIONS) +
           fieldHtml('video', 'Caminho do video', point.video || '', 'text') +
           uploadHtml('video-file', 'Enviar video desta ilha', point._videoFile) +
           fieldHtml('site', 'Link do site', point.site || '', 'text') +
@@ -346,6 +441,8 @@ function featureEditorHtml(point) {
         textareaHtml('introTop', 'Frase de cima', point.introTop || '') +
         textareaHtml('introBottom', 'Frase de baixo', point.introBottom || '') +
         textareaHtml('keywords', 'Palavras futuristas, uma por linha', (point.keywords || []).join('\n')) +
+        selectHtml('wordAnimation', 'Animacao das palavras', point.wordAnimation || 'vortex', WORD_ANIMATION_OPTIONS) +
+        selectHtml('wordLayout', 'Posicionamento das palavras', point.wordLayout || 'circle', WORD_LAYOUT_OPTIONS) +
       '</div>' +
     '</section>'
   );
@@ -358,6 +455,44 @@ function uploadHtml(id, label, file) {
       '<div class="upload-row">' +
         '<input id="' + id + '" type="file" />' +
         '<span class="upload-hint">' + (file ? 'Arquivo pendente: ' + escapeHtml(file.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function stepUploadHtml(index, field, label, file, accept) {
+  return (
+    '<div class="field full">' +
+      '<label>' + escapeHtml(label) + '</label>' +
+      '<div class="upload-row">' +
+        '<input type="file" data-step-index="' + index + '" data-step-file="' + escapeHtml(field) + '"' +
+          (accept ? ' accept="' + escapeHtml(accept) + '"' : '') + ' />' +
+        '<span class="upload-hint">' + (file ? 'Arquivo pendente: ' + escapeHtml(file.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function stepCheckboxGroupHtml(index, field, label, selected, options) {
+  var selectedMap = {};
+  (Array.isArray(selected) ? selected : String(selected || '').split(/\n|,/))
+    .map(function (item) { return String(item).trim(); })
+    .filter(Boolean)
+    .forEach(function (item) { selectedMap[item] = true; });
+
+  return (
+    '<div class="field full checkbox-field">' +
+      '<label>' + escapeHtml(label) + '</label>' +
+      '<div class="checkbox-grid">' +
+        options.map(function (option) {
+          return (
+            '<label class="checkbox-option">' +
+              '<input type="checkbox" data-step-index="' + index + '" data-step-multi="' + escapeHtml(field) + '" value="' + escapeHtml(option.value) + '"' +
+                (selectedMap[option.value] ? ' checked' : '') + ' />' +
+              '<span>' + escapeHtml(option.label) + '</span>' +
+            '</label>'
+          );
+        }).join('') +
       '</div>' +
     '</div>'
   );
@@ -377,8 +512,20 @@ function collectionHtml(collection) {
           '<input data-item-field="name" value="' + escapeHtml(item.name || '') + '" />' +
         '</div>' +
         '<div class="field full">' +
+          '<label>Titulo exibido no AR</label>' +
+          '<input data-item-field="title" value="' + escapeHtml(item.title || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
           '<label>Caminho da imagem</label>' +
           '<input data-item-field="image" value="' + escapeHtml(item.image || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Caminho do modelo 3D opcional</label>' +
+          '<input data-item-field="model" value="' + escapeHtml(item.model || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Escala do modelo opcional</label>' +
+          '<input data-item-field="modelScale" value="' + escapeHtml(item.modelScale || '') + '" />' +
         '</div>' +
         '<div class="field full">' +
           '<label>Enviar imagem do item</label>' +
@@ -386,7 +533,60 @@ function collectionHtml(collection) {
           '<span class="upload-hint">' + (item._imageFile ? 'Arquivo pendente: ' + escapeHtml(item._imageFile.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
         '</div>' +
         '<div class="field full">' +
+          '<label>Enviar modelo 3D do item</label>' +
+          '<input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" data-item-file="model" />' +
+          '<span class="upload-hint">' + (item._modelFile ? 'Arquivo pendente: ' + escapeHtml(item._modelFile.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
+        '</div>' +
+        '<div class="field full">' +
           '<button type="button" class="danger" data-remove-item="' + index + '">Remover item</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function stepItemsHtml(step, stepIndex) {
+  var items = Array.isArray(step.items) ? step.items : [];
+  if (!items.length) {
+    return '<p class="note">Nenhum item cadastrado neste bloco.</p>';
+  }
+
+  return items.map(function (item, itemIndex) {
+    return (
+      '<div class="collection-item" data-step-index="' + stepIndex + '" data-step-item-index="' + itemIndex + '">' +
+        '<h3>Item ' + (itemIndex + 1) + '</h3>' +
+        '<div class="field full">' +
+          '<label>Nome interno</label>' +
+          '<input data-step-item-field="name" value="' + escapeHtml(item.name || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Titulo exibido no AR</label>' +
+          '<input data-step-item-field="title" value="' + escapeHtml(item.title || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Caminho da imagem</label>' +
+          '<input data-step-item-field="image" value="' + escapeHtml(item.image || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Enviar imagem deste item</label>' +
+          '<input type="file" accept="image/*" data-step-item-file="image" />' +
+          '<span class="upload-hint">' + (item._imageFile ? 'Arquivo pendente: ' + escapeHtml(item._imageFile.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Caminho do modelo 3D opcional</label>' +
+          '<input data-step-item-field="model" value="' + escapeHtml(item.model || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Enviar modelo 3D deste item</label>' +
+          '<input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" data-step-item-file="model" />' +
+          '<span class="upload-hint">' + (item._modelFile ? 'Arquivo pendente: ' + escapeHtml(item._modelFile.name) : 'Nenhum arquivo novo selecionado.') + '</span>' +
+        '</div>' +
+        '<div class="field full">' +
+          '<label>Escala do modelo opcional</label>' +
+          '<input data-step-item-field="modelScale" value="' + escapeHtml(item.modelScale || '') + '" />' +
+        '</div>' +
+        '<div class="field full">' +
+          '<button type="button" class="danger" data-remove-step-item="' + itemIndex + '">Remover item</button>' +
         '</div>' +
       '</div>'
     );
@@ -407,7 +607,17 @@ function stepEditorHtml(step, index) {
   var type = step.type || 'scanner';
   var details = '';
 
-  if (type === 'scanner') {
+  if (type === 'logoText') {
+    details =
+      stepTextareaHtml(index, 'text', 'Texto que sai do logo', step.text || '') +
+      stepFieldHtml(index, 'x', 'Posicao X final', valueOrDefault(step.x, 0), 'number', '0.01') +
+      stepFieldHtml(index, 'y', 'Posicao Y final', valueOrDefault(step.y, 0.72), 'number', '0.01') +
+      stepFieldHtml(index, 'width', 'Largura da tarja', valueOrDefault(step.width, 1.45), 'number', '0.01') +
+      stepFieldHtml(index, 'height', 'Altura da tarja', valueOrDefault(step.height, 0.24), 'number', '0.01') +
+      stepFieldHtml(index, 'bg', 'Cor do fundo do texto', step.bg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'color', 'Cor do texto', step.color || '#ffffff', 'text') +
+      stepFieldHtml(index, 'font', 'Fonte do texto que sai do logo', valueOrDefault(step.font, 44), 'number');
+  } else if (type === 'scanner') {
     details =
       stepTextareaHtml(index, 'introTop', 'Frase de cima', step.introTop || '') +
       stepTextareaHtml(index, 'introBottom', 'Frase de baixo', step.introBottom || '') +
@@ -422,16 +632,76 @@ function stepEditorHtml(step, index) {
   } else if (type === 'words') {
     details =
       stepTextareaHtml(index, 'words', 'Palavras, uma por linha', (step.words || []).join('\n')) +
-      stepSelectHtml(index, 'animation', 'Animacao', step.animation || 'vortex', WORD_ANIMATION_OPTIONS);
+      stepSelectHtml(index, 'animation', 'Animacao', step.animation || 'vortex', WORD_ANIMATION_OPTIONS) +
+      stepSelectHtml(index, 'layout', 'Posicionamento', step.layout || 'circle', WORD_LAYOUT_OPTIONS) +
+      stepFieldHtml(index, 'wordBg', 'Cor do fundo das palavras', step.wordBg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'wordColor', 'Cor das palavras', step.wordColor || '#ffffff', 'text') +
+      stepFieldHtml(index, 'wordFont', 'Tamanho da fonte das palavras', valueOrDefault(step.wordFont, 56), 'number');
   } else if (type === 'actions') {
     details =
       stepFieldHtml(index, 'actions', 'Acoes, separadas por virgula', (step.actions || ['collection', 'video', 'site']).join(', '), 'text') +
       stepFieldHtml(index, 'cta', 'Texto grande abaixo dos botoes', step.cta || '', 'text');
-  } else if (type === 'collection' || type === 'video' || type === 'site') {
-    details = stepFieldHtml(index, 'cta', 'Texto grande abaixo do botao', step.cta || '', 'text');
+  } else if (type === 'collection') {
+    step.items = Array.isArray(step.items) ? step.items : [];
+    details =
+      stepFieldHtml(index, 'cta', 'Texto grande abaixo do botao', step.cta || '', 'text') +
+      '<div class="field full"><h3>Itens da galeria</h3></div>' +
+      '<div class="collection-list full">' + stepItemsHtml(step, index) + '</div>' +
+      '<div class="editor-actions full">' +
+        '<button type="button" data-add-step-item="' + index + '">Adicionar item</button>' +
+      '</div>';
+  } else if (type === 'video') {
+    details =
+      stepFieldHtml(index, 'cta', 'Texto grande abaixo do botao', step.cta || '', 'text') +
+      stepFieldHtml(index, 'video', 'Caminho do video', step.video || '', 'text') +
+      stepUploadHtml(index, 'video', 'Enviar video deste bloco', step._videoFile, 'video/*');
+  } else if (type === 'site') {
+    details =
+      stepFieldHtml(index, 'cta', 'Texto grande abaixo do botao', step.cta || '', 'text') +
+      stepFieldHtml(index, 'site', 'Link do site', step.site || '', 'text');
+  } else if (type === 'image') {
+    details =
+      stepFieldHtml(index, 'image', 'Caminho da imagem', step.image || '', 'text') +
+      stepUploadHtml(index, 'image', 'Enviar imagem deste bloco', step._imageFile, 'image/*') +
+      stepFieldHtml(index, 'title', 'Titulo da imagem', step.title || '', 'text') +
+      stepFieldHtml(index, 'width', 'Largura da imagem', valueOrDefault(step.width, 0.82), 'number', '0.01') +
+      stepFieldHtml(index, 'height', 'Altura da imagem', valueOrDefault(step.height, 0.56), 'number', '0.01') +
+      stepFieldHtml(index, 'x', 'Posicao X', valueOrDefault(step.x, 0), 'number', '0.01') +
+      stepFieldHtml(index, 'y', 'Posicao Y', valueOrDefault(step.y, 0.05), 'number', '0.01') +
+      stepFieldHtml(index, 'z', 'Posicao Z', valueOrDefault(step.z, 0.28), 'number', '0.01') +
+      stepFieldHtml(index, 'bg', 'Cor do fundo da imagem', step.bg || '#ffffff', 'text') +
+      stepFieldHtml(index, 'titleBg', 'Cor do fundo do titulo', step.titleBg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'titleColor', 'Cor do titulo', step.titleColor || '#ffffff', 'text') +
+      stepFieldHtml(index, 'titleFont', 'Fonte do titulo', valueOrDefault(step.titleFont, 38), 'number') +
+      stepFieldHtml(index, 'spinSpeed', 'Velocidade do giro', valueOrDefault(step.spinSpeed, 42), 'number') +
+      stepFieldHtml(index, 'floatAmount', 'Intensidade da flutuacao', valueOrDefault(step.floatAmount, 0.06), 'number', '0.01') +
+      stepCheckboxGroupHtml(index, 'interactions', 'Interacoes da imagem', step.interactions || ['float'], IMAGE_INTERACTION_OPTIONS);
+  } else if (type === 'carousel3d') {
+    step.items = Array.isArray(step.items) ? step.items : [];
+    details =
+      stepFieldHtml(index, 'title', 'Titulo do carrossel', step.title || '', 'text') +
+      stepFieldHtml(index, 'titleBg', 'Cor do fundo do titulo do carrossel', step.titleBg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'titleColor', 'Cor do titulo do carrossel', step.titleColor || '#ffffff', 'text') +
+      stepFieldHtml(index, 'titleFont', 'Tamanho da fonte do titulo do carrossel', valueOrDefault(step.titleFont, 50), 'number') +
+      stepFieldHtml(index, 'radius', 'Raio do carrossel', valueOrDefault(step.radius, 0.82), 'number', '0.01') +
+      stepFieldHtml(index, 'speed', 'Velocidade de giro', valueOrDefault(step.speed, 18), 'number') +
+      stepFieldHtml(index, 'itemWidth', 'Largura dos cards', valueOrDefault(step.itemWidth, 0.52), 'number', '0.01') +
+      stepFieldHtml(index, 'itemHeight', 'Altura dos cards', valueOrDefault(step.itemHeight, 0.68), 'number', '0.01') +
+      stepFieldHtml(index, 'cardBg', 'Cor do fundo das imagens', step.cardBg || '#ffffff', 'text') +
+      stepFieldHtml(index, 'itemTitleBg', 'Cor do fundo das legendas', step.itemTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'itemTitleColor', 'Cor das legendas', step.itemTitleColor || '#ffffff', 'text') +
+      stepFieldHtml(index, 'itemTitleFont', 'Tamanho da fonte das legendas', valueOrDefault(step.itemTitleFont, 38), 'number') +
+      stepFieldHtml(index, 'modelSize', 'Tamanho dos modelos 3D', valueOrDefault(step.modelSize, 0.46), 'number', '0.01') +
+      stepFieldHtml(index, 'y', 'Posicao Y do carrossel', valueOrDefault(step.y, 0.05), 'number', '0.01') +
+      '<div class="field full"><h3>Itens do carrossel</h3></div>' +
+      '<div class="collection-list full">' + stepItemsHtml(step, index) + '</div>' +
+      '<div class="editor-actions full">' +
+        '<button type="button" data-add-step-item="' + index + '">Adicionar item</button>' +
+      '</div>';
   } else if (type === 'model3d') {
     details =
       stepFieldHtml(index, 'model', 'Caminho do modelo desta etapa', step.model || '', 'text') +
+      stepUploadHtml(index, 'model', 'Enviar modelo 3D deste bloco', step._modelFile, '.glb,.gltf,model/gltf-binary,model/gltf+json') +
       stepFieldHtml(index, 'modelScale', 'Escala do modelo', step.modelScale || '', 'text') +
       stepFieldHtml(index, 'spinSpeed', 'Velocidade de giro', step.spinSpeed || '', 'number');
   }
@@ -444,6 +714,10 @@ function stepEditorHtml(step, index) {
       '</div>' +
       '<div class="editor-grid">' +
         stepSelectHtml(index, 'type', 'Funcionalidade', type, STEP_TYPE_OPTIONS) +
+        stepFieldHtml(index, 'stepTitle', 'Titulo do bloco', step.stepTitle || '', 'text') +
+        stepFieldHtml(index, 'stepTitleBg', 'Cor do fundo do titulo do bloco', step.stepTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+        stepFieldHtml(index, 'stepTitleColor', 'Cor do titulo do bloco', step.stepTitleColor || '#ffffff', 'text') +
+        stepFieldHtml(index, 'stepTitleFont', 'Fonte do titulo do bloco', valueOrDefault(step.stepTitleFont, 64), 'number') +
         stepFieldHtml(index, 'order', 'Ordem', valueOrDefault(step.order, index + 1), 'number') +
         stepFieldHtml(index, 'delay', 'Atraso antes de iniciar', valueOrDefault(step.delay, 0), 'number') +
         stepFieldHtml(index, 'duration', 'Duracao', valueOrDefault(step.duration, defaultDurationForStep(type)), 'number') +
@@ -493,17 +767,37 @@ function valueOrDefault(value, fallback) {
 }
 
 function defaultDurationForStep(type) {
+  if (type === 'logoText') return 1600;
   if (type === 'scanner') return 4200;
   if (type === 'words') return 11200;
   if (type === 'phrase') return 1800;
+  if (type === 'carousel3d') return 0;
+  if (type === 'image') return 0;
   return 0;
 }
 
 function defaultStep(type, order) {
+  if (type === 'logoText') {
+    return {
+      type: 'logoText',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 1600,
+      text: '',
+      x: 0,
+      y: 0.72,
+      width: 1.45,
+      height: 0.24,
+      font: 44
+    };
+  }
+
   if (type === 'scanner') {
     return {
       type: 'scanner',
       order: order,
+      stepTitle: '',
       delay: 0,
       duration: 4200,
       introTop: '',
@@ -517,10 +811,12 @@ function defaultStep(type, order) {
     return {
       type: 'words',
       order: order,
+      stepTitle: '',
       delay: 0,
       duration: 11200,
       words: [],
-      animation: 'vortex'
+      animation: 'vortex',
+      layout: 'circle'
     };
   }
 
@@ -528,6 +824,7 @@ function defaultStep(type, order) {
     return {
       type: 'phrase',
       order: order,
+      stepTitle: '',
       delay: 0,
       duration: 1800,
       text: '',
@@ -541,6 +838,7 @@ function defaultStep(type, order) {
     return {
       type: 'actions',
       order: order,
+      stepTitle: '',
       delay: 0,
       duration: 0,
       actions: ['collection', 'video', 'site'],
@@ -548,10 +846,95 @@ function defaultStep(type, order) {
     };
   }
 
+  if (type === 'image') {
+    return {
+      type: 'image',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 0,
+      image: '',
+      title: '',
+      width: 0.82,
+      height: 0.56,
+      x: 0,
+      y: 0.05,
+      z: 0.28,
+      bg: '#ffffff',
+      titleBg: 'rgba(177,18,27,0.72)',
+      titleColor: '#ffffff',
+      titleFont: 38,
+      interactions: ['float'],
+      spinSpeed: 42,
+      floatAmount: 0.06
+    };
+  }
+
+  if (type === 'carousel3d') {
+    return {
+      type: 'carousel3d',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 0,
+      title: '',
+      titleBg: 'rgba(177,18,27,0.72)',
+      titleColor: '#ffffff',
+      titleFont: 50,
+      radius: 0.82,
+      speed: 18,
+      itemWidth: 0.52,
+      itemHeight: 0.68,
+      cardBg: '#ffffff',
+      itemTitleBg: 'rgba(177,18,27,0.72)',
+      itemTitleColor: '#ffffff',
+      itemTitleFont: 38,
+      modelSize: 0.46,
+      y: 0.05
+    };
+  }
+
+  if (type === 'collection') {
+    return {
+      type: 'collection',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 0,
+      cta: '',
+      items: []
+    };
+  }
+
+  if (type === 'video') {
+    return {
+      type: 'video',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 0,
+      cta: '',
+      video: ''
+    };
+  }
+
+  if (type === 'site') {
+    return {
+      type: 'site',
+      order: order,
+      stepTitle: '',
+      delay: 0,
+      duration: 0,
+      cta: '',
+      site: ''
+    };
+  }
+
   if (type === 'model3d') {
     return {
       type: 'model3d',
       order: order,
+      stepTitle: '',
       delay: 0,
       duration: 0,
       model: '',
@@ -563,6 +946,7 @@ function defaultStep(type, order) {
   return {
     type: type || 'collection',
     order: order,
+    stepTitle: '',
     delay: 0,
     duration: 0,
     cta: ''
@@ -589,7 +973,8 @@ function legacyStepsFromPoint(point) {
         delay: 0,
         duration: 11200,
         words: Array.isArray(point.keywords) ? point.keywords : [],
-        animation: 'vortex'
+        animation: point.wordAnimation || 'vortex',
+        layout: point.wordLayout || 'circle'
       },
       {
         type: 'actions',
@@ -620,7 +1005,8 @@ function legacyStepsFromPoint(point) {
         delay: 0,
         duration: 11200,
         words: Array.isArray(point.keywords) ? point.keywords : [],
-        animation: 'vortex'
+        animation: point.wordAnimation || 'vortex',
+        layout: point.wordLayout || 'circle'
       },
       {
         type: 'phrase',
@@ -649,6 +1035,96 @@ function legacyStepsFromPoint(point) {
     ];
   }
 
+  if (feature === 'image') {
+    return [
+      {
+        type: 'image',
+        order: 1,
+        delay: 0,
+        duration: Number(point.imageDuration || 0),
+        image: point.image || '',
+        title: point.imageTitle || '',
+        width: Number(point.imageWidth || 0.82),
+        height: Number(point.imageHeight || 0.56),
+        x: Number(point.imageX || 0),
+        y: Number(point.imageY || 0.05),
+        z: Number(point.imageZ || 0.28),
+        bg: point.imageBg || '#ffffff',
+        titleBg: point.imageTitleBg || 'rgba(177,18,27,0.72)',
+        titleColor: point.imageTitleColor || '#ffffff',
+        titleFont: Number(point.imageTitleFont || 38),
+        interactions: Array.isArray(point.imageInteractions) ? point.imageInteractions : ['float'],
+        spinSpeed: Number(point.imageSpinSpeed || 42),
+        floatAmount: Number(point.imageFloatAmount || 0.06)
+      }
+    ];
+  }
+
+  if (feature === 'carousel3d') {
+    return [
+      {
+        type: 'carousel3d',
+        order: 1,
+        delay: 0,
+        duration: Number(point.carouselDuration || 0),
+        title: point.carouselTitle || '',
+        titleBg: point.carouselTitleBg || 'rgba(177,18,27,0.72)',
+        titleColor: point.carouselTitleColor || '#ffffff',
+        titleFont: Number(point.carouselTitleFont || 50),
+        radius: Number(point.carouselRadius || 0.82),
+        speed: Number(point.carouselSpeed || 18),
+        itemWidth: Number(point.carouselItemWidth || 0.52),
+        itemHeight: Number(point.carouselItemHeight || 0.68),
+        cardBg: point.carouselCardBg || '#ffffff',
+        itemTitleBg: point.carouselItemTitleBg || 'rgba(177,18,27,0.72)',
+        itemTitleColor: point.carouselItemTitleColor || '#ffffff',
+        itemTitleFont: Number(point.carouselItemTitleFont || 38),
+        modelSize: Number(point.carouselModelSize || 0.46),
+        y: Number(point.carouselY || 0.05),
+        items: normalizeCollectionForSave(point.collection)
+      }
+    ];
+  }
+
+  if (feature === 'collection') {
+    return [
+      {
+        type: 'collection',
+        order: 1,
+        delay: 0,
+        duration: 0,
+        cta: point.cta || '',
+        items: normalizeCollectionForSave(point.collection)
+      }
+    ];
+  }
+
+  if (feature === 'video') {
+    return [
+      {
+        type: 'video',
+        order: 1,
+        delay: 0,
+        duration: 0,
+        cta: point.cta || '',
+        video: point.video || ''
+      }
+    ];
+  }
+
+  if (feature === 'site') {
+    return [
+      {
+        type: 'site',
+        order: 1,
+        delay: 0,
+        duration: 0,
+        cta: point.cta || '',
+        site: point.site || ''
+      }
+    ];
+  }
+
   return [
     {
       type: feature,
@@ -658,6 +1134,22 @@ function legacyStepsFromPoint(point) {
       cta: point.cta || ''
     }
   ];
+}
+
+function normalizeCollectionForEditor(collection) {
+  return (Array.isArray(collection) ? collection : []).map(function (item) {
+    if (typeof item === 'string') {
+      return { name: 'Item', title: '', image: item, model: '', modelScale: '' };
+    }
+
+    return Object.assign({
+      name: 'Item',
+      title: '',
+      image: '',
+      model: '',
+      modelScale: ''
+    }, item || {});
+  });
 }
 
 function normalizeStepsForEditor(steps) {
@@ -676,6 +1168,9 @@ function normalizeStepsForEditor(steps) {
         clean.actions = Array.isArray(clean.actions) ? clean.actions : String(clean.actions || '').split(/\n|,/).map(function (action) {
           return action.trim();
         }).filter(Boolean);
+      }
+      if (clean.type === 'collection' || clean.type === 'carousel3d') {
+        clean.items = normalizeCollectionForEditor(clean.items || []);
       }
       return clean;
     })
@@ -700,7 +1195,26 @@ function bindEditorEvents(point) {
 
       if (field === 'keywords') {
         point.keywords = input.value.split(/\n|,/).map(function (word) { return word.trim(); }).filter(Boolean);
-      } else if (field === 'targetIndex' || field === 'trailStep') {
+      } else if (
+        field === 'targetIndex' ||
+        field === 'trailStep' ||
+        field === 'imageWidth' ||
+        field === 'imageHeight' ||
+        field === 'imageX' ||
+        field === 'imageY' ||
+        field === 'imageZ' ||
+        field === 'imageTitleFont' ||
+        field === 'imageSpinSpeed' ||
+        field === 'imageFloatAmount' ||
+        field === 'carouselRadius' ||
+        field === 'carouselSpeed' ||
+        field === 'carouselItemWidth' ||
+        field === 'carouselItemHeight' ||
+        field === 'carouselTitleFont' ||
+        field === 'carouselItemTitleFont' ||
+        field === 'carouselModelSize' ||
+        field === 'carouselY'
+      ) {
         point[field] = Number(input.value || 0);
       } else if (field === 'spinSpeed') {
         point[field] = Number(input.value || 45);
@@ -711,6 +1225,14 @@ function bindEditorEvents(point) {
       if (field === 'panel') selectedPanelName = point.panel || 'Painel 01';
       renderPanels();
       renderIslands();
+    });
+  });
+
+  document.querySelectorAll('[data-point-multi]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var field = input.getAttribute('data-point-multi');
+      point[field] = Array.from(document.querySelectorAll('[data-point-multi="' + field + '"]:checked'))
+        .map(function (item) { return item.value; });
     });
   });
 
@@ -741,7 +1263,20 @@ function bindEditorEvents(point) {
         field === 'bottomY' ||
         field === 'x' ||
         field === 'y' ||
+        field === 'z' ||
         field === 'width' ||
+        field === 'height' ||
+        field === 'floatAmount' ||
+        field === 'font' ||
+        field === 'stepTitleFont' ||
+        field === 'wordFont' ||
+        field === 'titleFont' ||
+        field === 'itemTitleFont' ||
+        field === 'radius' ||
+        field === 'speed' ||
+        field === 'itemWidth' ||
+        field === 'itemHeight' ||
+        field === 'modelSize' ||
         field === 'spinSpeed'
       ) {
         step[field] = Number(input.value || 0);
@@ -757,6 +1292,98 @@ function bindEditorEvents(point) {
     });
   });
 
+  document.querySelectorAll('[data-step-multi]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var stepIndex = Number(input.getAttribute('data-step-index'));
+      var field = input.getAttribute('data-step-multi');
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      step[field] = Array.from(document.querySelectorAll('[data-step-index="' + stepIndex + '"][data-step-multi="' + field + '"]:checked'))
+        .map(function (item) { return item.value; });
+    });
+  });
+
+  document.querySelectorAll('[data-step-file]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var stepIndex = Number(input.getAttribute('data-step-index'));
+      var field = input.getAttribute('data-step-file');
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      var file = input.files[0] || null;
+      if (field === 'video') step._videoFile = file;
+      if (field === 'model') step._modelFile = file;
+      if (field === 'image') step._imageFile = file;
+      renderEditor();
+    });
+  });
+
+  document.querySelectorAll('[data-step-item-field]').forEach(function (input) {
+    input.addEventListener('input', function () {
+      var itemEl = input.closest('[data-step-item-index]');
+      var stepIndex = Number(itemEl.getAttribute('data-step-index'));
+      var itemIndex = Number(itemEl.getAttribute('data-step-item-index'));
+      var field = input.getAttribute('data-step-item-field');
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      step.items = normalizeCollectionForEditor(step.items || []);
+      if (!step.items[itemIndex]) return;
+      step.items[itemIndex][field] = input.value;
+    });
+  });
+
+  document.querySelectorAll('[data-step-item-file]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var itemEl = input.closest('[data-step-item-index]');
+      var stepIndex = Number(itemEl.getAttribute('data-step-index'));
+      var itemIndex = Number(itemEl.getAttribute('data-step-item-index'));
+      var field = input.getAttribute('data-step-item-file');
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      step.items = normalizeCollectionForEditor(step.items || []);
+      if (!step.items[itemIndex]) return;
+      var file = input.files[0] || null;
+      if (field === 'image') step.items[itemIndex]._imageFile = file;
+      if (field === 'model') step.items[itemIndex]._modelFile = file;
+      renderEditor();
+    });
+  });
+
+  document.querySelectorAll('[data-remove-step-item]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var itemEl = btn.closest('[data-step-item-index]');
+      var stepIndex = Number(itemEl.getAttribute('data-step-index'));
+      var itemIndex = Number(btn.getAttribute('data-remove-step-item'));
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      step.items = normalizeCollectionForEditor(step.items || []);
+      step.items.splice(itemIndex, 1);
+      renderEditor();
+    });
+  });
+
+  document.querySelectorAll('[data-add-step-item]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var stepIndex = Number(btn.getAttribute('data-add-step-item'));
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      var step = point.steps[stepIndex];
+      if (!step) return;
+
+      step.items = normalizeCollectionForEditor(step.items || []);
+      step.items.push({ name: 'Novo item', title: '', image: '', model: '', modelScale: '' });
+      renderEditor();
+    });
+  });
+
   document.querySelectorAll('[data-remove-step]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var stepIndex = Number(btn.getAttribute('data-remove-step'));
@@ -768,6 +1395,37 @@ function bindEditorEvents(point) {
       renderEditor();
     });
   });
+
+  var addLogoTextStepBtn = document.getElementById('add-logo-text-step-btn');
+  if (addLogoTextStepBtn) {
+    addLogoTextStepBtn.addEventListener('click', function () {
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      point.steps.forEach(function (step) {
+        step.order = Number(step.order || 0) + 1;
+      });
+      point.steps.unshift(defaultStep('logoText', 1));
+      point.steps = normalizeStepsForEditor(point.steps);
+      renderEditor();
+    });
+  }
+
+  var addCarouselStepBtn = document.getElementById('add-carousel-step-btn');
+  if (addCarouselStepBtn) {
+    addCarouselStepBtn.addEventListener('click', function () {
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      point.steps.push(defaultStep('carousel3d', point.steps.length + 1));
+      renderEditor();
+    });
+  }
+
+  var addImageStepBtn = document.getElementById('add-image-step-btn');
+  if (addImageStepBtn) {
+    addImageStepBtn.addEventListener('click', function () {
+      point.steps = normalizeStepsForEditor(point.steps || []);
+      point.steps.push(defaultStep('image', point.steps.length + 1));
+      renderEditor();
+    });
+  }
 
   var addSequenceStepBtn = document.getElementById('add-sequence-step-btn');
   if (addSequenceStepBtn) {
@@ -790,6 +1448,14 @@ function bindEditorEvents(point) {
   if (videoFile) {
     videoFile.addEventListener('change', function () {
       point._videoFile = videoFile.files[0] || null;
+      renderEditor();
+    });
+  }
+
+  var imageFile = document.getElementById('image-file');
+  if (imageFile) {
+    imageFile.addEventListener('change', function () {
+      point._imageFile = imageFile.files[0] || null;
       renderEditor();
     });
   }
@@ -835,7 +1501,7 @@ function bindEditorEvents(point) {
   var addCollectionBtn = document.getElementById('add-collection-item-btn');
   if (addCollectionBtn) {
     addCollectionBtn.addEventListener('click', function () {
-      point.collection.push({ name: 'Novo item', image: '' });
+      point.collection.push({ name: 'Novo item', title: '', image: '', model: '', modelScale: '' });
       renderEditor();
     });
   }
@@ -937,7 +1603,7 @@ async function saveProjectConfig() {
     setStatus('Salvando arquivos enviados...', '');
     await persistUploads();
     await writeTextFile(projectDirHandle, 'trail-config.js', buildConfigSource());
-    setStatus('Arquivos salvos. A imagem nova so funciona depois que voce recompilar e substituir targets/targets.mind.', 'ok');
+    setStatus('Arquivos salvos. Recompile targets/targets.mind apenas se voce trocou alguma imagem target do scan.', 'ok');
   } catch (err) {
     console.error(err);
     setStatus('Erro ao salvar: ' + err.message, 'error');
@@ -962,12 +1628,58 @@ async function persistUploads() {
       point._videoFile = null;
     }
 
+    if ((feature === 'image' || feature === 'custom') && point._imageFile) {
+      point.image = await writeUploadedFile(point._imageFile, ['assets', 'images', panelSlug], 'image-' + pointSlug);
+      point._imageFile = null;
+    }
+
     if ((feature === 'model3d' || feature === 'custom') && point._modelFile) {
       point.model = await writeUploadedFile(point._modelFile, ['assets', 'models', panelSlug], 'model-' + pointSlug);
       point._modelFile = null;
     }
 
-    if (feature !== 'collection' && feature !== 'menu' && feature !== 'custom') continue;
+    if (feature === 'custom' && Array.isArray(point.steps)) {
+      point.steps = normalizeStepsForEditor(point.steps);
+      for (var s = 0; s < point.steps.length; s++) {
+        var step = point.steps[s];
+        var stepSlug = slugify((s + 1) + '-' + (step.type || 'bloco'));
+
+        if (step._videoFile) {
+          step.video = await writeUploadedFile(step._videoFile, ['videos', panelSlug], 'video-' + pointSlug + '-' + stepSlug);
+          step._videoFile = null;
+        }
+
+        if (step._modelFile) {
+          step.model = await writeUploadedFile(step._modelFile, ['assets', 'models', panelSlug], 'model-' + pointSlug + '-' + stepSlug);
+          step._modelFile = null;
+        }
+
+        if (step._imageFile) {
+          step.image = await writeUploadedFile(step._imageFile, ['assets', 'images', panelSlug], 'image-' + pointSlug + '-' + stepSlug);
+          step._imageFile = null;
+        }
+
+        if (step.type === 'collection' || step.type === 'carousel3d') {
+          step.items = normalizeCollectionForEditor(step.items || []);
+          for (var si = 0; si < step.items.length; si++) {
+            var stepItem = step.items[si];
+            var stepItemSlug = slugify((si + 1) + '-' + (stepItem.name || 'item'));
+
+            if (stepItem._imageFile) {
+              stepItem.image = await writeUploadedFile(stepItem._imageFile, ['assets', 'collections', panelSlug], pointSlug + '-' + stepSlug + '-' + stepItemSlug);
+              stepItem._imageFile = null;
+            }
+
+            if (stepItem._modelFile) {
+              stepItem.model = await writeUploadedFile(stepItem._modelFile, ['assets', 'models', panelSlug], 'model-' + pointSlug + '-' + stepSlug + '-' + stepItemSlug);
+              stepItem._modelFile = null;
+            }
+          }
+        }
+      }
+    }
+
+    if (feature !== 'collection' && feature !== 'carousel3d' && feature !== 'menu' && feature !== 'custom') continue;
 
     var collection = Array.isArray(point.collection) ? point.collection : [];
     for (var j = 0; j < collection.length; j++) {
@@ -977,6 +1689,11 @@ async function persistUploads() {
       if (item._imageFile) {
         item.image = await writeUploadedFile(item._imageFile, ['assets', 'collections', panelSlug], itemSlug);
         item._imageFile = null;
+      }
+
+      if (item._modelFile) {
+        item.model = await writeUploadedFile(item._modelFile, ['assets', 'models', panelSlug], 'model-' + itemSlug);
+        item._modelFile = null;
       }
     }
   }
@@ -1032,6 +1749,18 @@ function buildConfigSource() {
   return 'window.TRAIL_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n';
 }
 
+function normalizeCollectionForSave(collection) {
+  return (Array.isArray(collection) ? collection : []).map(function (item) {
+    return {
+      name: item.name || 'Item',
+      title: item.title || '',
+      image: item.image || '',
+      model: item.model || '',
+      modelScale: item.modelScale || ''
+    };
+  });
+}
+
 function normalizePointForSave(point) {
   var feature = getPointFeature(point);
   var clean = {
@@ -1044,44 +1773,77 @@ function normalizePointForSave(point) {
   };
 
   if (feature === 'custom') {
-    clean.steps = normalizeStepsForSave(point.steps && point.steps.length ? point.steps : legacyStepsFromPoint(point));
-    clean.video = point.video || '';
-    clean.site = point.site || '';
-    clean.model = point.model || '';
+    var customSteps = normalizeStepsForEditor(point.steps && point.steps.length ? point.steps : legacyStepsFromPoint(point));
+    var firstVideoStep = customSteps.filter(function (step) { return step.type === 'video' && step.video; })[0];
+    var firstSiteStep = customSteps.filter(function (step) { return step.type === 'site' && step.site; })[0];
+    var firstModelStep = customSteps.filter(function (step) { return step.type === 'model3d' && step.model; })[0];
+    var firstCollectionStep = customSteps.filter(function (step) {
+      return step.type === 'collection' && Array.isArray(step.items) && step.items.length;
+    })[0];
+    var firstCarouselStep = customSteps.filter(function (step) {
+      return step.type === 'carousel3d' && Array.isArray(step.items) && step.items.length;
+    })[0];
+
+    clean.steps = normalizeStepsForSave(customSteps);
+    clean.video = (firstVideoStep && firstVideoStep.video) || point.video || '';
+    clean.site = (firstSiteStep && firstSiteStep.site) || point.site || '';
+    clean.model = (firstModelStep && firstModelStep.model) || point.model || '';
     clean.modelScale = point.modelScale || '0.55 0.55 0.55';
     clean.spinSpeed = Number(point.spinSpeed || 45);
-    clean.collection = (Array.isArray(point.collection) ? point.collection : []).map(function (item) {
-      return {
-        name: item.name || 'Item',
-        image: item.image || ''
-      };
-    });
+    clean.collection = normalizeCollectionForSave(
+      (firstCollectionStep && firstCollectionStep.items) ||
+      (firstCarouselStep && firstCarouselStep.items) ||
+      point.collection
+    );
   } else if (feature === 'info' || feature === 'menu') {
     clean.phrase = point.phrase || '';
     clean.introTop = point.introTop || '';
     clean.introBottom = point.introBottom || '';
     clean.keywords = Array.isArray(point.keywords) ? point.keywords : [];
+    clean.wordAnimation = point.wordAnimation || 'vortex';
+    clean.wordLayout = point.wordLayout || 'circle';
     if (feature === 'menu') {
       clean.video = point.video || '';
       clean.site = point.site || '';
-      clean.collection = (Array.isArray(point.collection) ? point.collection : []).map(function (item) {
-        return {
-          name: item.name || 'Item',
-          image: item.image || ''
-        };
-      });
+      clean.collection = normalizeCollectionForSave(point.collection);
     }
   } else if (feature === 'video') {
     clean.video = point.video || '';
   } else if (feature === 'site') {
     clean.site = point.site || '';
+  } else if (feature === 'image') {
+    clean.image = point.image || '';
+    clean.imageTitle = point.imageTitle || '';
+    clean.imageWidth = Number(point.imageWidth || 0.82);
+    clean.imageHeight = Number(point.imageHeight || 0.56);
+    clean.imageX = Number(point.imageX || 0);
+    clean.imageY = Number(point.imageY || 0.05);
+    clean.imageZ = Number(point.imageZ || 0.28);
+    clean.imageBg = point.imageBg || '#ffffff';
+    clean.imageTitleBg = point.imageTitleBg || 'rgba(177,18,27,0.72)';
+    clean.imageTitleColor = point.imageTitleColor || '#ffffff';
+    clean.imageTitleFont = Number(point.imageTitleFont || 38);
+    clean.imageInteractions = Array.isArray(point.imageInteractions) ? point.imageInteractions : ['float'];
+    clean.imageSpinSpeed = Number(point.imageSpinSpeed || 42);
+    clean.imageFloatAmount = Number(point.imageFloatAmount || 0.06);
   } else if (feature === 'collection') {
-    clean.collection = (Array.isArray(point.collection) ? point.collection : []).map(function (item) {
-      return {
-        name: item.name || 'Item',
-        image: item.image || ''
-      };
-    });
+    clean.collection = normalizeCollectionForSave(point.collection);
+  } else if (feature === 'carousel3d') {
+    clean.carouselTitle = point.carouselTitle || '';
+    clean.carouselTitleBg = point.carouselTitleBg || 'rgba(177,18,27,0.72)';
+    clean.carouselTitleColor = point.carouselTitleColor || '#ffffff';
+    clean.carouselTitleFont = Number(point.carouselTitleFont || 50);
+    clean.carouselRadius = Number(point.carouselRadius || 0.82);
+    clean.carouselSpeed = Number(point.carouselSpeed || 18);
+    clean.carouselItemWidth = Number(point.carouselItemWidth || 0.52);
+    clean.carouselItemHeight = Number(point.carouselItemHeight || 0.68);
+    clean.carouselCardBg = point.carouselCardBg || '#ffffff';
+    clean.carouselItemTitleBg = point.carouselItemTitleBg || 'rgba(177,18,27,0.72)';
+    clean.carouselItemTitleColor = point.carouselItemTitleColor || '#ffffff';
+    clean.carouselItemTitleFont = Number(point.carouselItemTitleFont || 38);
+    clean.carouselModelSize = Number(point.carouselModelSize || 0.46);
+    clean.carouselY = Number(point.carouselY || 0.05);
+    clean.collection = normalizeCollectionForSave(point.collection);
   } else if (feature === 'model3d') {
     clean.model = point.model || '';
     clean.modelScale = point.modelScale || '0.55 0.55 0.55';
@@ -1097,11 +1859,24 @@ function normalizeStepsForSave(steps) {
     var clean = {
       type: type,
       order: Number(step.order || index + 1),
+      stepTitle: step.stepTitle || '',
+      stepTitleBg: step.stepTitleBg || 'rgba(177,18,27,0.72)',
+      stepTitleColor: step.stepTitleColor || '#ffffff',
+      stepTitleFont: Number(valueOrDefault(step.stepTitleFont, 64)),
       delay: Number(step.delay || 0),
       duration: Number(valueOrDefault(step.duration, defaultDurationForStep(type)))
     };
 
-    if (type === 'scanner') {
+    if (type === 'logoText') {
+      clean.text = step.text || '';
+      clean.x = Number(valueOrDefault(step.x, 0));
+      clean.y = Number(valueOrDefault(step.y, 0.72));
+      clean.width = Number(valueOrDefault(step.width, 1.45));
+      clean.height = Number(valueOrDefault(step.height, 0.24));
+      clean.bg = step.bg || 'rgba(177,18,27,0.72)';
+      clean.color = step.color || '#ffffff';
+      clean.font = Number(valueOrDefault(step.font, 44));
+    } else if (type === 'scanner') {
       clean.introTop = step.introTop || '';
       clean.introBottom = step.introBottom || '';
       clean.topY = Number(valueOrDefault(step.topY, 0.58));
@@ -1109,6 +1884,10 @@ function normalizeStepsForSave(steps) {
     } else if (type === 'words') {
       clean.words = Array.isArray(step.words) ? step.words : [];
       clean.animation = step.animation || 'vortex';
+      clean.layout = step.layout || 'circle';
+      clean.wordBg = step.wordBg || 'rgba(177,18,27,0.72)';
+      clean.wordColor = step.wordColor || '#ffffff';
+      clean.wordFont = Number(valueOrDefault(step.wordFont, 56));
     } else if (type === 'phrase') {
       clean.text = step.text || '';
       clean.x = Number(valueOrDefault(step.x, 0));
@@ -1117,8 +1896,46 @@ function normalizeStepsForSave(steps) {
     } else if (type === 'actions') {
       clean.actions = Array.isArray(step.actions) && step.actions.length ? step.actions : ['collection', 'video', 'site'];
       clean.cta = step.cta || '';
-    } else if (type === 'collection' || type === 'video' || type === 'site') {
+    } else if (type === 'collection') {
       clean.cta = step.cta || '';
+      clean.items = normalizeCollectionForSave(step.items);
+    } else if (type === 'video') {
+      clean.cta = step.cta || '';
+      clean.video = step.video || '';
+    } else if (type === 'site') {
+      clean.cta = step.cta || '';
+      clean.site = step.site || '';
+    } else if (type === 'image') {
+      clean.image = step.image || '';
+      clean.title = step.title || '';
+      clean.width = Number(valueOrDefault(step.width, 0.82));
+      clean.height = Number(valueOrDefault(step.height, 0.56));
+      clean.x = Number(valueOrDefault(step.x, 0));
+      clean.y = Number(valueOrDefault(step.y, 0.05));
+      clean.z = Number(valueOrDefault(step.z, 0.28));
+      clean.bg = step.bg || '#ffffff';
+      clean.titleBg = step.titleBg || 'rgba(177,18,27,0.72)';
+      clean.titleColor = step.titleColor || '#ffffff';
+      clean.titleFont = Number(valueOrDefault(step.titleFont, 38));
+      clean.interactions = Array.isArray(step.interactions) ? step.interactions : ['float'];
+      clean.spinSpeed = Number(valueOrDefault(step.spinSpeed, 42));
+      clean.floatAmount = Number(valueOrDefault(step.floatAmount, 0.06));
+    } else if (type === 'carousel3d') {
+      clean.title = step.title || '';
+      clean.titleBg = step.titleBg || 'rgba(177,18,27,0.72)';
+      clean.titleColor = step.titleColor || '#ffffff';
+      clean.titleFont = Number(valueOrDefault(step.titleFont, 50));
+      clean.radius = Number(valueOrDefault(step.radius, 0.82));
+      clean.speed = Number(valueOrDefault(step.speed, 18));
+      clean.itemWidth = Number(valueOrDefault(step.itemWidth, 0.52));
+      clean.itemHeight = Number(valueOrDefault(step.itemHeight, 0.68));
+      clean.cardBg = step.cardBg || '#ffffff';
+      clean.itemTitleBg = step.itemTitleBg || 'rgba(177,18,27,0.72)';
+      clean.itemTitleColor = step.itemTitleColor || '#ffffff';
+      clean.itemTitleFont = Number(valueOrDefault(step.itemTitleFont, 38));
+      clean.modelSize = Number(valueOrDefault(step.modelSize, 0.46));
+      clean.y = Number(valueOrDefault(step.y, 0.05));
+      clean.items = normalizeCollectionForSave(step.items);
     } else if (type === 'model3d') {
       clean.model = step.model || '';
       clean.modelScale = step.modelScale || '';

@@ -4,76 +4,369 @@ window.TRAIL_CONFIG = {
       "targetIndex": 0,
       "panel": "Painel 01",
       "trailStep": 1,
-      "feature": "model3d",
+      "feature": "custom",
       "targetImage": "targets/source/painel-01/target-1-grupo-tsa.png",
       "name": "Grupo TSA",
-      "model": "assets/models/painel-01/model-1-grupo-tsa.glb",
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "PASSO 1",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 10,
+          "duration": 2000,
+          "text": "Comunicação Digital",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.4,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 100,
+          "duration": 11200,
+          "words": [
+            "Ecossistema",
+            "Tecnologia",
+            "Soluções integradas"
+          ],
+          "animation": "vortex",
+          "layout": "circle",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "model3d",
+          "order": 3,
+          "stepTitle": "Camisa TSA",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 100,
+          "duration": 0,
+          "model": "assets/models/painel-01/model-1-grupo-tsa-3-model3d.glb",
+          "modelScale": "0.55,0.55,0.55",
+          "spinSpeed": 30
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "assets/models/painel-01/model-1-grupo-tsa-3-model3d.glb",
       "modelScale": "0.55 0.55 0.55",
-      "spinSpeed": 30
+      "spinSpeed": 30,
+      "collection": []
     },
     {
       "targetIndex": 1,
       "panel": "Painel 01",
       "trailStep": 2,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/painel-01/target-2-marca-02.png",
       "name": "Marca 02",
-      "phrase": "TARGET 1",
-      "introTop": "TARGET 1",
-      "introBottom": "TARGET 1",
-      "keywords": [
-        "TARGET 1",
-        "TARGET 1",
-        "TARGET 1"
-      ]
+      "steps": [
+        {
+          "type": "scanner",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 4200,
+          "introTop": "Ambiente digital",
+          "introBottom": " interno",
+          "topY": 0.58,
+          "bottomY": -0.58
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 11200,
+          "words": [
+            "Integração",
+            "Tecnologia",
+            "Antecipamos tendências"
+          ],
+          "animation": "vortex",
+          "layout": "row",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "phrase",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1800,
+          "text": "",
+          "x": 0,
+          "y": -0.46,
+          "width": 1.05
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": []
     },
     {
       "targetIndex": 2,
       "panel": "Painel 01",
       "trailStep": 3,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/painel-01/target-3-marca-03.png",
       "name": "Marca 03",
-      "phrase": "TARGET 2",
-      "introTop": "TARGET 2",
-      "introBottom": "TARGET 2",
-      "keywords": [
-        "TARGET 2",
-        "TARGET 2",
-        "TARGET 2"
-      ]
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Comunicação de lançamento",
+          "x": 0,
+          "y": 0.72,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 44
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 11200,
+          "words": [
+            "Qualidade",
+            "Tecnologia",
+            "Inovação"
+          ],
+          "animation": "vortex",
+          "layout": "column",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "model3d",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "model": "",
+          "modelScale": "",
+          "spinSpeed": ""
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": []
     },
     {
       "targetIndex": 3,
       "panel": "Painel 01",
       "trailStep": 4,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/painel-01/target-4-marca-04.png",
       "name": "Marca 04",
-      "phrase": "TARGET 3",
-      "introTop": "TARGET 3",
-      "introBottom": "TARGET 3",
-      "keywords": [
-        "TARGET 3",
-        "TARGET 3",
-        "TARGET 3"
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Materiais Institucionais",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.3,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "carousel3d",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "title": "",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 50,
+          "radius": 0.3,
+          "speed": 50,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 45,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "Camisa",
+              "title": "Camisa TSA",
+              "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-1-camisa.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Chaveiro",
+              "title": "Chaveiro TSA",
+              "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": [
+        {
+          "name": "Camisa",
+          "title": "Camisa TSA",
+          "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-1-camisa.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Chaveiro",
+          "title": "Chaveiro TSA",
+          "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
+          "model": "",
+          "modelScale": ""
+        }
       ]
     },
     {
       "targetIndex": 4,
       "panel": "TSA",
       "trailStep": 1,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/tsa/target-1-nova-ilha.png",
       "name": "Nova ilha",
-      "phrase": "TARGET 4",
-      "introTop": "TARGET 4",
-      "introBottom": "TARGET 4",
-      "keywords": [
-        "TARGET 4",
-        "TARGET 4",
-        "TARGET 4"
-      ]
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Comunicação Digital",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 11200,
+          "words": [
+            "Múltiplas competências",
+            "Tecnologia",
+            "Soluções integradas"
+          ],
+          "animation": "wave",
+          "layout": "circle",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "image",
+          "order": 3,
+          "stepTitle": "Modelos de posts",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "image": "assets/images/tsa/image-1-nova-ilha-3-image.png",
+          "title": "",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": []
     },
     {
       "targetIndex": 8,
@@ -89,7 +382,9 @@ window.TRAIL_CONFIG = {
         "TARGET 8",
         "TARGET 8",
         "TARGET 8"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 12,
@@ -105,54 +400,303 @@ window.TRAIL_CONFIG = {
         "TARGET 12",
         "TARGET 12",
         "TARGET 12"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 5,
       "panel": "TSA",
       "trailStep": 2,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/tsa/target-2-nova-ilha.png",
       "name": "Nova ilha",
-      "phrase": "TARGET 5",
-      "introTop": "TARGET 5",
-      "introBottom": "TARGET 5",
-      "keywords": [
-        "TARGET 5",
-        "TARGET 5",
-        "TARGET 5"
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": " Ambiente digital interno",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 11200,
+          "words": [
+            "Consultoria",
+            "Tecnologia",
+            "Operação"
+          ],
+          "animation": "wave",
+          "layout": "row",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "carousel3d",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "title": "",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 50,
+          "radius": 0.82,
+          "speed": 18,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "Wallpaper computador",
+              "title": "Wallpaper computador",
+              "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-1-wallpaper-computador.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Fundo Teams",
+              "title": "Fundo Teams",
+              "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-2-fundo-teams.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": [
+        {
+          "name": "Wallpaper computador",
+          "title": "Wallpaper computador",
+          "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-1-wallpaper-computador.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Fundo Teams",
+          "title": "Fundo Teams",
+          "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-2-fundo-teams.png",
+          "model": "",
+          "modelScale": ""
+        }
       ]
     },
     {
       "targetIndex": 6,
       "panel": "TSA",
       "trailStep": 3,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/tsa/target-3-nova-ilha.png",
       "name": "Nova ilha",
-      "phrase": "TARGET 6",
-      "introTop": "TARGET 6",
-      "introBottom": "TARGET 6",
-      "keywords": [
-        "TARGET 6",
-        "TARGET 6",
-        "TARGET 6"
-      ]
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Comunicação de lançamento",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 7000,
+          "words": [
+            "Confiabilidade",
+            "Tecnologia",
+            "Operações seguras"
+          ],
+          "animation": "wave",
+          "layout": "diagonal",
+          "wordBg": "rgba(177,18,27,0.72)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "image",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "image": "assets/images/tsa/image-3-nova-ilha-3-image.png",
+          "title": "Móbiles de teto",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "pulse",
+            "tilt",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": []
     },
     {
       "targetIndex": 7,
       "panel": "TSA",
       "trailStep": 4,
-      "feature": "info",
+      "feature": "custom",
       "targetImage": "targets/source/tsa/target-4-nova-ilha.png",
       "name": "Nova ilha",
-      "phrase": "TARGET 7",
-      "introTop": "TARGET 7",
-      "introBottom": "TARGET 7",
-      "keywords": [
-        "TARGET 7",
-        "TARGET 7",
-        "TARGET 7"
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Materiais Institucionais",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "carousel3d",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "delay": 0,
+          "duration": 0,
+          "title": "",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 50,
+          "radius": 0.6,
+          "speed": 30,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "PPT",
+              "title": "PPT",
+              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-1-ppt.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Anúncios de revista",
+              "title": "Anúncios de revista",
+              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-2-anuncios-de-revista.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Assinatura de e-mail ",
+              "title": "Assinatura de e-mail ",
+              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-3-assinatura-de-e-mail.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": [
+        {
+          "name": "PPT",
+          "title": "PPT",
+          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-1-ppt.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Anúncios de revista",
+          "title": "Anúncios de revista",
+          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-2-anuncios-de-revista.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Assinatura de e-mail ",
+          "title": "Assinatura de e-mail ",
+          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-3-assinatura-de-e-mail.png",
+          "model": "",
+          "modelScale": ""
+        }
       ]
     },
     {
@@ -169,7 +713,9 @@ window.TRAIL_CONFIG = {
         "TARGET 9",
         "TARGET 9",
         "TARGET 9"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 10,
@@ -185,7 +731,9 @@ window.TRAIL_CONFIG = {
         "TARGET 10",
         "TARGET 10",
         "TARGET 10"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 11,
@@ -201,7 +749,9 @@ window.TRAIL_CONFIG = {
         "TARGET 11",
         "TARGET 11",
         "TARGET 11"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 13,
@@ -217,7 +767,9 @@ window.TRAIL_CONFIG = {
         "TARGET 13",
         "TARGET 13",
         "TARGET 13"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 14,
@@ -233,7 +785,9 @@ window.TRAIL_CONFIG = {
         "TARGET 14",
         "TARGET 14",
         "TARGET 14"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     },
     {
       "targetIndex": 15,
@@ -249,7 +803,9 @@ window.TRAIL_CONFIG = {
         "TARGET 15",
         "TARGET 15",
         "TARGET 15"
-      ]
+      ],
+      "wordAnimation": "vortex",
+      "wordLayout": "circle"
     }
   ],
   "productTargetsData": [
