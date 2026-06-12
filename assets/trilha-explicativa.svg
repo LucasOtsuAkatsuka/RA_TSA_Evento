@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+  <title id="title">Diagrama da trilha de scans</title>
+  <desc id="desc">Painel de marca com uma trilha de pontos para escanear do inicio ao fim.</desc>
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#151515"/>
+      <stop offset="1" stop-color="#050505"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="720" height="420" rx="26" fill="rgba(0,0,0,0.55)"/>
+  <rect x="38" y="34" width="644" height="352" rx="22" fill="url(#panel)" stroke="#cfd3dc" stroke-opacity="0.3" stroke-width="2"/>
+  <path d="M68 66h80M68 66v80M652 354h-80M652 354v-80" fill="none" stroke="#e94560" stroke-width="5" stroke-linecap="round"/>
+
+  <text x="360" y="77" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">PAINEL DA MARCA</text>
+  <text x="360" y="105" text-anchor="middle" fill="#cfd3dc" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600">siga a trilha e escaneie cada ponto</text>
+
+  <path d="M132 300 C168 236, 228 242, 266 196 S365 125, 414 176 S492 286, 586 128"
+        fill="none" stroke="#cfd3dc" stroke-width="13" stroke-linecap="round" stroke-opacity="0.22"/>
+  <path d="M132 300 C168 236, 228 242, 266 196 S365 125, 414 176 S492 286, 586 128"
+        fill="none" stroke="#e94560" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 16" filter="url(#glow)"/>
+
+  <g font-family="Segoe UI, Arial, sans-serif" font-weight="900" text-anchor="middle">
+    <g transform="translate(132 300)">
+      <circle r="38" fill="#e94560" filter="url(#glow)"/>
+      <circle r="24" fill="#b1121b"/>
+      <text y="7" fill="#ffffff" font-size="18">START</text>
+    </g>
+    <g transform="translate(266 196)">
+      <circle r="34" fill="#e94560" filter="url(#glow)"/>
+      <rect x="-16" y="-16" width="32" height="32" rx="7" fill="#ffffff" opacity="0.95"/>
+      <text y="58" fill="#ffffff" font-size="17">SCAN 1</text>
+    </g>
+    <g transform="translate(414 176)">
+      <circle r="34" fill="#e94560" filter="url(#glow)"/>
+      <rect x="-16" y="-16" width="32" height="32" rx="7" fill="#ffffff" opacity="0.95"/>
+      <text y="58" fill="#ffffff" font-size="17">SCAN 2</text>
+    </g>
+    <g transform="translate(506 262)">
+      <circle r="34" fill="#e94560" filter="url(#glow)"/>
+      <rect x="-16" y="-16" width="32" height="32" rx="7" fill="#ffffff" opacity="0.95"/>
+      <text y="58" fill="#ffffff" font-size="17">SCAN 3</text>
+    </g>
+    <g transform="translate(586 128)">
+      <circle r="40" fill="#ffffff" filter="url(#glow)"/>
+      <circle r="28" fill="#e94560"/>
+      <path d="M570 128l10 10 24-26" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <text y="64" fill="#ffffff" font-size="18">FINAL</text>
+    </g>
+  </g>
+</svg>

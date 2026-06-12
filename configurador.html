@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurador Temporario TSA</title>
+  <link rel="stylesheet" href="configurador.css" />
+</head>
+<body>
+  <header class="config-header">
+    <div>
+      <p class="eyebrow">Ferramenta temporaria</p>
+      <h1>Configurador da trilha</h1>
+      <p class="header-copy">
+        Edite os paineis, selecione as ilhas e envie os arquivos de cada etapa.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button id="pick-folder-btn" type="button">Escolher pasta do projeto</button>
+      <button id="save-project-btn" type="button">Salvar no projeto</button>
+      <button id="download-config-btn" type="button">Baixar config</button>
+    </div>
+  </header>
+
+  <main class="config-shell">
+    <aside class="panel-sidebar">
+      <div class="section-title">
+        <span>Paineis</span>
+        <button id="add-panel-btn" type="button">Adicionar</button>
+      </div>
+      <div id="panels-list" class="panels-list"></div>
+    </aside>
+
+    <section class="islands-panel">
+      <div class="section-title">
+        <span id="selected-panel-title">Selecione um painel</span>
+        <button id="add-island-btn" type="button">Nova ilha</button>
+      </div>
+      <div id="islands-list" class="islands-list"></div>
+      <p class="note">
+        As imagens target salvas aqui nao entram automaticamente no AR. Depois de salvar, recompile
+        <code>targets/targets.mind</code> usando somente as imagens desejadas, na ordem dos targetIndex.
+      </p>
+    </section>
+
+    <section id="point-editor" class="editor-panel">
+      <div class="empty-state">
+        <h2>Nenhuma ilha selecionada</h2>
+        <p>Escolha um painel e uma ilha para editar o conteudo exibido no scan.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="status-bar" class="status-bar">Pronto.</div>
+
+  <script src="trail-config.js"></script>
+  <script src="configurador.js"></script>
+</body>
+</html>

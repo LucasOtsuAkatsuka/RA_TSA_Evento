@@ -111,7 +111,7 @@ canvas.a-canvas,
   border-radius: 8px;
   padding: 2rem 1.8rem 1.4rem;
   text-align: center;
-  max-width: 360px;
+  max-width: 390px;
   width: 100%;
   border: 1px solid var(--tsa-line);
   box-shadow: 0 0 0 1px rgba(233, 69, 96, 0.12), 0 20px 60px rgba(0, 0, 0, 0.7);
@@ -162,11 +162,372 @@ canvas.a-canvas,
   margin-bottom: 0.75rem;
 }
 
+.welcome-step-label {
+  color: var(--tsa-red);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
 .welcome-card > p {
   font-size: clamp(0.85rem, 3vw, 0.95rem);
   line-height: 1.65;
   color: rgba(207, 211, 220, 0.78);
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.1rem;
+}
+
+.welcome-panels-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0.15rem 0 1rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(207, 211, 220, 0.2);
+  background:
+    linear-gradient(135deg, rgba(233, 69, 96, 0.14), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(207, 211, 220, 0.12), transparent 30%),
+    rgba(0, 0, 0, 0.34);
+  box-shadow: 0 0 24px rgba(233, 69, 96, 0.16);
+}
+
+.welcome-panel-card {
+  min-height: 4.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  border-radius: 8px;
+  border: 1px solid rgba(233, 69, 96, 0.42);
+  background: rgba(0, 0, 0, 0.46);
+  box-shadow: inset 0 0 18px rgba(233, 69, 96, 0.08), 0 0 16px rgba(233, 69, 96, 0.12);
+  animation: panelCardIn 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.welcome-panel-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.welcome-panel-card:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.welcome-panel-card:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.welcome-panel-card span,
+.welcome-panel-card strong {
+  display: block;
+  text-align: center;
+}
+
+.welcome-panel-card span {
+  color: var(--tsa-red);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.welcome-panel-card strong {
+  color: var(--tsa-white);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.welcome-trail-map {
+  display: block;
+  width: 100%;
+  aspect-ratio: 12 / 6;
+  margin: 0.15rem 0 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(207, 211, 220, 0.2);
+  background:
+    radial-gradient(circle at 18% 80%, rgba(233, 69, 96, 0.18), transparent 26%),
+    radial-gradient(circle at 74% 22%, rgba(207, 211, 220, 0.12), transparent 28%),
+    rgba(0, 0, 0, 0.34);
+  box-shadow: 0 0 24px rgba(233, 69, 96, 0.16);
+  overflow: hidden;
+}
+
+.welcome-trail-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.trail-path-base,
+.trail-path-progress {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trail-path-base {
+  stroke: rgba(207, 211, 220, 0.18);
+  stroke-width: 12;
+  stroke-dasharray: 2 24;
+}
+
+.trail-path-progress {
+  stroke: var(--tsa-red);
+  stroke-width: 14;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 82;
+  filter: drop-shadow(0 0 12px rgba(233, 69, 96, 0.72));
+  transition: stroke-dashoffset 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.welcome-trail-map[data-step="1"] .trail-path-progress {
+  stroke-dashoffset: 56;
+}
+
+.welcome-trail-map[data-step="2"] .trail-path-progress {
+  stroke-dashoffset: 29;
+}
+
+.welcome-trail-map[data-step="3"] .trail-path-progress {
+  stroke-dashoffset: 0;
+}
+
+.trail-point circle {
+  fill: rgba(0, 0, 0, 0.82);
+  stroke: rgba(207, 211, 220, 0.55);
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill 0.28s ease, stroke 0.28s ease, filter 0.28s ease;
+}
+
+.trail-point text {
+  fill: var(--tsa-metal);
+  font-size: 22px;
+  font-weight: 900;
+  text-anchor: middle;
+  text-transform: uppercase;
+  transition: fill 0.28s ease;
+}
+
+.welcome-trail-map[data-step="0"] .trail-point-0 circle,
+.welcome-trail-map[data-step="1"] .trail-point-0 circle,
+.welcome-trail-map[data-step="1"] .trail-point-1 circle,
+.welcome-trail-map[data-step="2"] .trail-point-0 circle,
+.welcome-trail-map[data-step="2"] .trail-point-1 circle,
+.welcome-trail-map[data-step="2"] .trail-point-2 circle,
+.welcome-trail-map[data-step="3"] .trail-point circle {
+  fill: var(--tsa-red);
+  stroke: rgba(255, 255, 255, 0.82);
+  filter: drop-shadow(0 0 12px rgba(233, 69, 96, 0.65));
+}
+
+.welcome-trail-map[data-step="0"] .trail-point-0 text,
+.welcome-trail-map[data-step="1"] .trail-point-0 text,
+.welcome-trail-map[data-step="1"] .trail-point-1 text,
+.welcome-trail-map[data-step="2"] .trail-point-0 text,
+.welcome-trail-map[data-step="2"] .trail-point-1 text,
+.welcome-trail-map[data-step="2"] .trail-point-2 text,
+.welcome-trail-map[data-step="3"] .trail-point text {
+  fill: var(--tsa-white);
+}
+
+.welcome-trail-map[data-step="0"] .trail-point-0 circle,
+.welcome-trail-map[data-step="1"] .trail-point-1 circle,
+.welcome-trail-map[data-step="2"] .trail-point-2 circle,
+.welcome-trail-map[data-step="3"] .trail-point-3 circle {
+  animation: trailPointPulse 0.7s ease both;
+}
+
+.trail-caption {
+  fill: rgba(207, 211, 220, 0.68);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+
+@keyframes trailPointPulse {
+  0% {
+    transform: scale(0.72);
+  }
+
+  58% {
+    transform: scale(1.16);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes panelCardIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.phone-standing {
+  display: block;
+  color: var(--tsa-red);
+  font-size: clamp(1.8rem, 10vw, 2.8rem);
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  margin: 0.25rem 0;
+  text-shadow: 0 0 18px var(--tsa-red-glow);
+}
+
+.phone-orientation-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0.85rem 0 0.95rem;
+}
+
+.phone-option {
+  position: relative;
+  min-height: 6.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(207, 211, 220, 0.18);
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.phone-option-correct {
+  border-color: rgba(63, 220, 126, 0.52);
+  box-shadow: inset 0 0 18px rgba(63, 220, 126, 0.08), 0 0 18px rgba(63, 220, 126, 0.14);
+}
+
+.phone-option-wrong {
+  border-color: rgba(233, 69, 96, 0.56);
+  opacity: 0.86;
+}
+
+.phone-icon {
+  position: relative;
+  display: block;
+  border: 3px solid var(--tsa-metal);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 0 12px rgba(207, 211, 220, 0.14);
+}
+
+.phone-icon::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(207, 211, 220, 0.72);
+  transform: translateX(-50%);
+}
+
+.phone-icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(207, 211, 220, 0.72);
+  transform: translateX(-50%);
+}
+
+.phone-icon-standing {
+  width: 2.15rem;
+  height: 3.8rem;
+}
+
+.phone-icon-landscape {
+  width: 3.8rem;
+  height: 2.15rem;
+}
+
+.phone-icon-landscape::before {
+  left: 7px;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  transform: translateY(-50%);
+}
+
+.phone-icon-landscape::after {
+  left: auto;
+  right: 7px;
+  bottom: 50%;
+  transform: translateY(50%);
+}
+
+.phone-mark {
+  position: absolute;
+  right: 0.55rem;
+  top: 0.5rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--tsa-white);
+  font-size: 1.2rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.phone-option-correct .phone-mark {
+  background: #2ecc71;
+  box-shadow: 0 0 16px rgba(46, 204, 113, 0.46);
+}
+
+.phone-option-wrong .phone-mark {
+  background: var(--tsa-red);
+  box-shadow: 0 0 16px rgba(233, 69, 96, 0.46);
+}
+
+.phone-option small {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.55rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.welcome-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0.4rem 0 1.1rem;
+}
+
+.welcome-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(207, 211, 220, 0.32);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.welcome-dot.active {
+  width: 1.15rem;
+  background: var(--tsa-red);
+  box-shadow: 0 0 16px var(--tsa-red-glow);
 }
 
 .welcome-card button {
@@ -181,17 +542,12 @@ canvas.a-canvas,
   font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0;
   box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.08), 0 0 24px rgba(177, 18, 27, 0.38);
   transition: background 0.15s, box-shadow 0.15s;
 }
 
 .welcome-card button:active { background: var(--tsa-red); }
-
-.welcome-card small {
-  font-size: 0.75rem;
-  color: rgba(207, 211, 220, 0.55);
-}
 
 /* =====================================================
    TELA INICIAL (SPLASH)

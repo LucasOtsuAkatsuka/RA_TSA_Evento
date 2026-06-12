@@ -261,7 +261,7 @@
         var viewportHeight = canvas ? canvas.clientHeight : window.innerHeight;
         var isPortrait = viewportHeight > viewportWidth;
         var portraitScreenFactor = this.el.classList.contains('words-group') ? 0.72 : 0.78;
-        var portraitMaxFactor = this.el.classList.contains('words-group') ? 0.78 : 0.82;
+        var portraitMaxFactor = this.el.classList.contains('words-group') ? 1.15 : 1.25;
         var screenTarget = this.data.screen * (isPortrait ? portraitScreenFactor : 1);
         var minScale = this.data.min * (isPortrait ? 0.78 : 1);
         var maxScale = this.data.max * (isPortrait ? portraitMaxFactor : 1);
@@ -373,6 +373,39 @@
           if (this._labelEl) this._labelEl.setAttribute('value', 'Erro ao carregar 3D');
           console.error('[WebAR] Erro no modelo 3D:', this.data.name, this.el.getAttribute('src'), event.detail);
         }.bind(this));
+      }
+    });
+
+    AFRAME.registerComponent('continuous-spin', {
+      schema: {
+        axis:  { default: 'y' },
+        speed: { type: 'number', default: 45 }
+      },
+      init: function () {
+        this._target = null;
+        this._baseRotation = null;
+        this._angle = 0;
+      },
+      getSpinTarget: function () {
+        var mesh = this.el.getObject3D('mesh');
+        return mesh || this.el.object3D;
+      },
+      tick: function (time, delta) {
+        if (!delta) return;
+        var axis = this.data.axis;
+        var target = this.getSpinTarget();
+        if (!target || !target.rotation || !(axis in target.rotation)) return;
+
+        if (target !== this._target) {
+          this._target = target;
+          this._baseRotation = target.rotation.clone();
+        }
+
+        this._angle = (this._angle + THREE.MathUtils.degToRad(this.data.speed) * (delta / 1000)) % (Math.PI * 2);
+        target.rotation.x = this._baseRotation.x;
+        target.rotation.y = this._baseRotation.y;
+        target.rotation.z = this._baseRotation.z;
+        target.rotation[axis] += this._angle;
       }
     });
 
@@ -556,24 +589,13 @@
         }
 
         var words = this.data.words.split(',').map(function (w) { return w.trim(); }).filter(Boolean);
-        var radius = this.data.radius;
         var total = words.length || 1;
-        var slots = [
-          { x: -0.74, y:  0.64 },
-          { x:  0.74, y:  0.64 },
-          { x:  0.98, y:  0.0 },
-          { x:  0.74, y: -0.64 },
-          { x: -0.74, y: -0.64 },
-          { x: -0.98, y:  0.0 }
-        ];
 
         this._tags = [];
 
         words.forEach(function (word, i) {
-          var angle = (Math.PI * 2 * i) / total;
-          var slot = slots[i % slots.length];
-          var x = slot ? slot.x : Math.cos(angle) * radius;
-          var y = slot ? slot.y : Math.sin(angle) * radius * 0.72;
+          var angle = (Math.PI / 2) - ((Math.PI * 2 * i) / total);
+          var pos = this.getTagPosition(angle, total, i);
 
           var tag = document.createElement('a-entity');
           tag.setAttribute('position', '0 0 0.17');
@@ -584,8 +606,28 @@
             'text:' + word + '; width:0.84; height:0.23; bg:rgba(177,18,27,0.72); color:#ffffff; font:56');
           tag.appendChild(label);
           this.el.appendChild(tag);
-          this._tags.push({ el: tag, angle: angle, x: x, y: y });
+          this._tags.push({ el: tag, angle: angle, index: i, x: pos.x, y: pos.y });
         }, this);
+      },
+      getTagPosition: function (angle, total, index) {
+        if (total <= 3) {
+          var fixedSlots = [
+            { x: 0, y: 0.46 },
+            { x: -0.45, y: -0.25 },
+            { x: 0.45, y: -0.25 }
+          ];
+          return fixedSlots[index % fixedSlots.length];
+        }
+
+        var radiusFactor = total <= 4 ? 0.76 : (total === 5 ? 0.84 : 0.9);
+        var horizontalInset = total <= 4 ? 0.68 : 0.72;
+        var verticalInset = total <= 4 ? 0.62 : 0.68;
+        var effectiveRadius = this.data.radius * radiusFactor;
+
+        return {
+          x: Math.cos(angle) * effectiveRadius * horizontalInset,
+          y: Math.sin(angle) * effectiveRadius * verticalInset
+        };
       },
       reset: function () {
         this._orbiting = false;
@@ -667,16 +709,21 @@
         if (!this._tags || !this._tags.length) return;
         if (this._startTime === null) this._startTime = time;
 
-        var radius = this.data.radius;
         var spin = ((time - this._startTime) / this.data.speed) * Math.PI * 2;
+        var total = this._tags.length || 1;
 
         this._tags.forEach(function (tagData) {
+          if (total <= 3) {
+            tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.16');
+            tagData.el.setAttribute('rotation', '0 0 0');
+            return;
+          }
+
           var angle = tagData.angle + spin;
-          var x = Math.cos(angle) * radius;
-          var y = Math.sin(angle) * radius * 0.72;
-          tagData.el.setAttribute('position', x + ' ' + y + ' 0.16');
+          var pos = this.getTagPosition(angle, total, tagData.index);
+          tagData.el.setAttribute('position', pos.x + ' ' + pos.y + ' 0.16');
           tagData.el.setAttribute('rotation', '0 0 0');
-        });
+        }, this);
       }
     });
   </script>
@@ -706,10 +753,52 @@
   <div id="ar-welcome" class="hidden">
     <div class="welcome-card">
       <p class="welcome-brand">TSA</p>
-      <h2>Bem-vindo ao TSA Tour</h2>
-      <p>Direcione a camera para um adesivo ou imagem de produto e veja a experiencia em AR.</p>
-      <button onclick="dismissWelcome()">Entendido ✓</button>
-      <small>Fecha em <span id="welcome-countdown">6</span>s</small>
+      <p id="welcome-step-label" class="welcome-step-label">Passo 1 de 4</p>
+      <h2 id="welcome-title">Quatro paineis de marca</h2>
+      <p id="welcome-text">A experiencia e dividida em quatro paineis. Cada painel representa uma marca e funciona como uma trilha visual do inicio ao fim.</p>
+      <div id="welcome-panels-map" class="welcome-panels-map" aria-label="Quatro paineis de marca">
+        <div class="welcome-panel-card">
+          <span>PAINEL 01</span>
+          <strong>MARCA</strong>
+        </div>
+        <div class="welcome-panel-card">
+          <span>PAINEL 02</span>
+          <strong>MARCA</strong>
+        </div>
+        <div class="welcome-panel-card">
+          <span>PAINEL 03</span>
+          <strong>MARCA</strong>
+        </div>
+        <div class="welcome-panel-card">
+          <span>PAINEL 04</span>
+          <strong>MARCA</strong>
+        </div>
+      </div>
+      <div id="welcome-trail-map" class="welcome-trail-map hidden" data-step="0" aria-label="Trilha de pontos para escanear">
+        <svg viewBox="0 0 720 360" role="img" aria-hidden="true">
+          <path class="trail-path-base" d="M74 292 C132 208 212 238 244 164 C286 72 398 82 430 156 C462 226 556 204 628 78" />
+          <path class="trail-path-progress" pathLength="100" d="M74 292 C132 208 212 238 244 164 C286 72 398 82 430 156 C462 226 556 204 628 78" />
+          <g class="trail-point trail-point-0" transform="translate(74 292)">
+            <circle r="26"></circle>
+            <text y="7">1</text>
+          </g>
+          <g class="trail-point trail-point-1" transform="translate(244 164)">
+            <circle r="26"></circle>
+            <text y="7">2</text>
+          </g>
+          <g class="trail-point trail-point-2" transform="translate(430 156)">
+            <circle r="26"></circle>
+            <text y="7">3</text>
+          </g>
+          <g class="trail-point trail-point-3" transform="translate(628 78)">
+            <circle r="26"></circle>
+            <text y="7">FIM</text>
+          </g>
+          <text class="trail-caption" x="360" y="334">avance escaneando cada ponto</text>
+        </svg>
+      </div>
+      <div id="welcome-dots" class="welcome-dots" aria-hidden="true"></div>
+      <button id="welcome-next-btn" onclick="nextWelcomeStep()">Entendido</button>
     </div>
   </div>
 
@@ -751,7 +840,7 @@
         <div class="carousel-image-wrapper">
           <img id="carousel-img" src="" alt="Item da coleção" />
           <p id="carousel-empty" class="carousel-empty hidden">
-            Adicione imagens em<br><code>assets/collections/marca_0N/</code>
+            Nenhuma imagem carregada.
           </p>
         </div>
         <button class="carousel-nav" onclick="nextCollectionImage()" aria-label="Próximo">&#8250;</button>
@@ -775,7 +864,7 @@
     embedded
     cursor="rayOrigin: mouse"
     raycaster="objects: .clickable; far: 10000"
-    mindar-image="imageTargetSrc: ./targets/targets.mind; autoStart: false; uiLoading: yes; uiScanning: no; uiError: yes;"
+    mindar-image="imageTargetSrc: ./targets/targets.mind; autoStart: false; uiLoading: yes; uiScanning: no; uiError: yes; filterMinCF:0.001; filterBeta:0.01; warmupTolerance:3; missTolerance:12;"
     color-space="sRGB"
     renderer="colorManagement: true; alpha: true; antialias: true;"
     vr-mode-ui="enabled: false"
@@ -966,11 +1055,11 @@
         rotation="0 0 0"
         scale="0.55 0.55 0.55"
         product-model-status="name:Camisa TSA"
-        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:8000; easing:linear">
+        continuous-spin="axis:y; speed:45">
       </a-gltf-model>
     </a-entity>
 
-    <!-- ALVO 5 -> produto Boné TSA -->
+    <!-- ALVO 5 -> produto Bone TSA -->
     <a-entity id="product-target-bone" mindar-image-target="targetIndex: 5">
       <a-gltf-model
         src="assets/models/marca_01/bone.glb"
@@ -978,7 +1067,7 @@
         rotation="0 0 0"
         scale="0.55 0.55 0.55"
         product-model-status="name:Boné TSA"
-        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:8000; easing:linear">
+        continuous-spin="axis:y; speed:45">
       </a-gltf-model>
     </a-entity>
 
@@ -990,11 +1079,12 @@
         rotation="0 0 0"
         scale="0.55 0.55 0.55"
         product-model-status="name:Chaveiro TSA"
-        animation__rotate="property:rotation; to:0 360 0; loop:true; dur:7600; easing:linear">
+        continuous-spin="axis:y; speed:48">
       </a-gltf-model>
     </a-entity>
   </a-scene>
 
+  <script src="trail-config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
