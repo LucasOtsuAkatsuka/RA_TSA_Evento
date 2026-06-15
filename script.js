@@ -211,6 +211,8 @@ function startScratchReveal(options, done) {
   var ctx = canvas.getContext('2d', { willReadFrequently: true });
   var threshold = Number(options && options.scratchThreshold ? options.scratchThreshold : 0.2);
   var brush = Number(options && options.scratchBrush ? options.scratchBrush : 88);
+  var onScratch = options && typeof options.onScratch === 'function' ? options.onScratch : null;
+  var disableAutoComplete = !!(options && options.disableAutoComplete);
   var completed = false;
   var drawing = false;
   var last = null;
@@ -277,6 +279,7 @@ function startScratchReveal(options, done) {
     ctx.restore();
 
     last = point;
+    if (onScratch) onScratch(point);
   }
 
   function getClearedRatio() {
@@ -308,6 +311,7 @@ function startScratchReveal(options, done) {
   }
 
   function maybeComplete(force) {
+    if (disableAutoComplete) return;
     checkCount++;
     if (!force && checkCount % 5 !== 0) return;
     if (getClearedRatio() >= threshold) complete();
@@ -637,7 +641,7 @@ function createTrailTarget(brand, dataIndex) {
   target.setAttribute('data-feature', feature);
 
   target.innerHTML =
-    '<a-entity id="text-group-' + dataIndex + '" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">' +
+    '<a-entity id="text-group-' + dataIndex + '" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.08; deadband:0.018">' +
       '<a-text class="ar-brand" value="" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>' +
       '<a-entity class="ar-intro-line ar-intro-top" hud-label="text:; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
       '<a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>' +
@@ -647,7 +651,7 @@ function createTrailTarget(brand, dataIndex) {
       '<a-text class="ar-phrase" value="" position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>' +
     '</a-entity>' +
 
-    '<a-entity id="words-group-' + dataIndex + '" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">' +
+    '<a-entity id="words-group-' + dataIndex + '" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.08; deadband:0.018">' +
       '<a-entity class="ar-orbit-tags" orbit-tags="words:; radius:1.15; speed:15000" visible="false"></a-entity>' +
     '</a-entity>' +
 

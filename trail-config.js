@@ -96,7 +96,7 @@ window.TRAIL_CONFIG = {
       "name": "Marca 02",
       "steps": [
         {
-          "type": "scanner",
+          "type": "logoText",
           "order": 1,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -104,11 +104,15 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 4200,
-          "introTop": "Ambiente digital",
-          "introBottom": " interno",
-          "topY": 0.58,
-          "bottomY": -0.58
+          "duration": 1600,
+          "text": "Ambiente digital interno",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(177,18,27,0.72)",
+          "color": "#ffffff",
+          "font": 60
         },
         {
           "type": "words",
@@ -321,13 +325,6 @@ window.TRAIL_CONFIG = {
               "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
               "model": "",
               "modelScale": ""
-            },
-            {
-              "name": "celular 3D",
-              "title": "celular 3D",
-              "image": "",
-              "model": "assets/models/painel-01/model-4-marca-04-2-carousel3d-3-celular-3d.glb",
-              "modelScale": ""
             }
           ]
         }
@@ -350,13 +347,6 @@ window.TRAIL_CONFIG = {
           "title": "Chaveiro TSA",
           "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
           "model": "",
-          "modelScale": ""
-        },
-        {
-          "name": "celular 3D",
-          "title": "celular 3D",
-          "image": "",
-          "model": "assets/models/painel-01/model-4-marca-04-2-carousel3d-3-celular-3d.glb",
           "modelScale": ""
         }
       ]

@@ -201,7 +201,8 @@
         min:    { type: 'number', default: 0.52 },
         max:    { type: 'number', default: 2.15 },
         screen: { type: 'number', default: 380 },
-        lerp:   { type: 'number', default: 0.15 }
+        lerp:   { type: 'number', default: 0.08 },
+        deadband: { type: 'number', default: 0.018 }
       },
       init: function () {
         this._cameraPos = new THREE.Vector3();
@@ -274,6 +275,10 @@
         );
 
         if (this._currentScale === null) this._currentScale = targetScale;
+
+        if (Math.abs(targetScale - this._currentScale) < this.data.deadband) {
+          targetScale = this._currentScale;
+        }
 
         this._currentScale = THREE.MathUtils.lerp(
           this._currentScale,
@@ -422,7 +427,14 @@
       init: function () { this.render(); },
       update: function () { this.render(); },
       render: function () {
-        var d = this.data;
+        var d = this.data || {};
+        d.text = d.text || '';
+        d.width = Number(d.width || 0.8);
+        d.height = Number(d.height || 0.18);
+        d.bg = d.bg || '#b1121b';
+        d.color = d.color || '#ffffff';
+        d.font = Number(d.font || 42);
+        d.variant = d.variant || 'solid';
         var W = 1024;
         var H = 256;
         var cvs = document.createElement('canvas');
@@ -752,7 +764,7 @@
             tagData.label.setAttribute('hud-label', 'bg', this.data.bg);
             tagData.label.setAttribute('hud-label', 'color', this.data.color);
           }
-        });
+        }, this);
       },
       clearInteractions: function () {
         if (!this._interactionCleanups) this._interactionCleanups = [];
@@ -847,6 +859,7 @@
       finishInteractiveWords: function () {
         this.clearDriftTimers();
         this._orbiting = false;
+        if (window.cancelScratchReveal) window.cancelScratchReveal();
 
         if (!this._completeEl) {
           this._completeEl = document.createElement('a-entity');
@@ -1174,21 +1187,115 @@
           }
         });
 
-        var finish = function () {
-          if (!this._tags) return;
+        var scratchCorners = [
+          new THREE.Vector3(),
+          new THREE.Vector3(),
+          new THREE.Vector3(),
+          new THREE.Vector3()
+        ];
+
+        var getWordScreenRect = function (tagData, camera, width, height) {
+          if (!tagData.label || !tagData.label.object3D) return null;
+
+          var halfW = Math.max(0.08, this.data.width * 0.5);
+          var halfH = Math.max(0.04, this.data.height * 0.5);
+          var localCorners = [
+            [-halfW, -halfH, 0],
+            [ halfW, -halfH, 0],
+            [ halfW,  halfH, 0],
+            [-halfW,  halfH, 0]
+          ];
+          var minX = Infinity;
+          var minY = Infinity;
+          var maxX = -Infinity;
+          var maxY = -Infinity;
+
+          tagData.label.object3D.updateWorldMatrix(true, false);
+
+          for (var i = 0; i < localCorners.length; i++) {
+            scratchCorners[i].set(localCorners[i][0], localCorners[i][1], localCorners[i][2]);
+            tagData.label.object3D.localToWorld(scratchCorners[i]);
+            scratchCorners[i].project(camera);
+
+            if (scratchCorners[i].z < -1 || scratchCorners[i].z > 1) return null;
+
+            var x = (scratchCorners[i].x * 0.5 + 0.5) * width;
+            var y = (-scratchCorners[i].y * 0.5 + 0.5) * height;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+
+          var padX = Math.max(8, (maxX - minX) * 0.08);
+          var padY = Math.max(6, (maxY - minY) * 0.12);
+
+          return {
+            x: Math.max(0, minX - padX),
+            y: Math.max(0, minY - padY),
+            w: Math.min(width, maxX + padX) - Math.max(0, minX - padX),
+            h: Math.min(height, maxY + padY) - Math.max(0, minY - padY)
+          };
+        }.bind(this);
+
+        var getScratchClearedRatio = function (rect) {
+          var canvas = document.getElementById('scratch-canvas');
+          if (!canvas || !rect || rect.w <= 1 || rect.h <= 1) return 0;
+
+          var ctx = canvas.getContext('2d', { willReadFrequently: true });
+          var dprX = canvas.width / Math.max(window.innerWidth, 1);
+          var dprY = canvas.height / Math.max(window.innerHeight, 1);
+          var x = Math.max(0, Math.floor(rect.x * dprX));
+          var y = Math.max(0, Math.floor(rect.y * dprY));
+          var w = Math.max(1, Math.min(canvas.width - x, Math.ceil(rect.w * dprX)));
+          var h = Math.max(1, Math.min(canvas.height - y, Math.ceil(rect.h * dprY)));
+          var data = ctx.getImageData(x, y, w, h).data;
+          var clearPixels = 0;
+          var total = w * h;
+
+          for (var i = 3; i < data.length; i += 4) {
+            if (data[i] < 32) clearPixels++;
+          }
+
+          return total ? clearPixels / total : 0;
+        };
+
+        var findWordAtPoint = function () {
+          var sceneEl = this.el.sceneEl;
+          var camera = sceneEl && sceneEl.camera;
+          var renderer = sceneEl && sceneEl.renderer;
+          var canvas = renderer && renderer.domElement;
+          var width = canvas ? canvas.clientWidth : window.innerWidth;
+          var height = canvas ? canvas.clientHeight : window.innerHeight;
+          var revealThreshold = 0.9;
+
+          if (!camera || !width || !height) return;
+
           this._tags.forEach(function (tagData) {
-            this.markTagComplete(tagData);
+            if (tagData.completed) return;
+            var rect = getWordScreenRect(tagData, camera, width, height);
+            if (getScratchClearedRatio(rect) >= revealThreshold) {
+              this.markTagComplete(tagData);
+            }
           }, this);
+
           this.maybeFinishInteractive();
         }.bind(this);
 
         if (window.startScratchReveal) {
           window.startScratchReveal({
-            scratchThreshold: 0.12,
-            scratchBrush: 96
-          }, finish);
+            scratchThreshold: 1.1,
+            scratchBrush: 96,
+            disableAutoComplete: true,
+            onScratch: findWordAtPoint
+          }, function () {});
         } else {
-          this._completeTimer = setTimeout(finish, Math.max(1600, Number(duration || 3200)));
+          this._completeTimer = setTimeout(function () {
+            this._tags.forEach(function (tagData) {
+              this.markTagComplete(tagData);
+            }, this);
+            this.maybeFinishInteractive();
+          }.bind(this), Math.max(1600, Number(duration || 3200)));
         }
       },
       startOrbit: function () {
@@ -1400,7 +1507,7 @@
     embedded
     cursor="rayOrigin: mouse"
     raycaster="objects: .clickable; far: 10000"
-    mindar-image="imageTargetSrc: ./targets/targets.mind; autoStart: false; uiLoading: yes; uiScanning: no; uiError: yes; filterMinCF:0.001; filterBeta:0.01; warmupTolerance:3; missTolerance:12;"
+    mindar-image="imageTargetSrc: ./targets/targets.mind; autoStart: false; uiLoading: yes; uiScanning: no; uiError: yes; filterMinCF:0.0001; filterBeta:0.001; warmupTolerance:5; missTolerance:20;"
     color-space="sRGB"
     renderer="colorManagement: true; alpha: true; antialias: true;"
     vr-mode-ui="enabled: false"
@@ -1413,7 +1520,7 @@
 
     <!-- ALVO 0 -> aplicação original / Marca 01 -->
     <a-entity id="target-0" mindar-image-target="targetIndex: 0">
-      <a-entity id="text-group-0" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+      <a-entity id="text-group-0" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.08; deadband:0.018">
         <a-text class="ar-brand" value="Marca 01" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
         <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
         <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
@@ -1421,7 +1528,7 @@
         <a-text class="ar-phrase" value="Moda urbana com identidade e atitude." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
       </a-entity>
 
-      <a-entity id="words-group-0" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+      <a-entity id="words-group-0" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.08; deadband:0.018">
         <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
       </a-entity>
 
@@ -1456,7 +1563,7 @@
 
     <!-- ALVO 1 -> aplicação original / Marca 02 -->
     <a-entity id="target-1" mindar-image-target="targetIndex: 1">
-      <a-entity id="text-group-1" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+      <a-entity id="text-group-1" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.08; deadband:0.018">
         <a-text class="ar-brand" value="Marca 02" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
         <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
         <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
@@ -1464,7 +1571,7 @@
         <a-text class="ar-phrase" value="Design autoral para todos os momentos." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
       </a-entity>
 
-      <a-entity id="words-group-1" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+      <a-entity id="words-group-1" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.08; deadband:0.018">
         <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
       </a-entity>
 
@@ -1499,7 +1606,7 @@
 
     <!-- ALVO 2 -> aplicação original / Marca 03 -->
     <a-entity id="target-2" mindar-image-target="targetIndex: 2">
-      <a-entity id="text-group-2" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+      <a-entity id="text-group-2" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.08; deadband:0.018">
         <a-text class="ar-brand" value="Marca 03" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
         <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
         <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
@@ -1507,7 +1614,7 @@
         <a-text class="ar-phrase" value="Estilo, conforto e presenca." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
       </a-entity>
 
-      <a-entity id="words-group-2" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+      <a-entity id="words-group-2" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.08; deadband:0.018">
         <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
       </a-entity>
 
@@ -1542,7 +1649,7 @@
 
     <!-- ALVO 3 -> aplicação original / Marca 04 -->
     <a-entity id="target-3" mindar-image-target="targetIndex: 3">
-      <a-entity id="text-group-3" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.22">
+      <a-entity id="text-group-3" class="text-group" adaptive-scale="factor:0.75; min:0.52; max:2.25; screen:410; lerp:0.08; deadband:0.018">
         <a-text class="ar-brand" value="Marca 04" position="0 0.78 0.08" align="center" color="#e94560" width="1.4" visible="false"></a-text>
         <a-entity class="ar-intro-line ar-intro-top" hud-label="text:Tecnologia, estilo e presença; width:1.36; height:0.21; bg:#b1121b; color:#ffffff; font:40; variant:glass" position="0 0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
         <a-entity class="ar-intro-line ar-intro-bottom" hud-label="text:Detalhes que fortalecem a marca; width:1.48; height:0.21; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.58 0.18" scale="0.001 0.001 0.001" visible="false"></a-entity>
@@ -1550,7 +1657,7 @@
         <a-text class="ar-phrase" value="Novas formas de vestir o futuro." position="0 -0.46 0.09" align="center" color="#ffffff" width="1.05" scale="1.7 1.7 1.7" visible="false" animation__float="property:object3D.position.y; from:-0.46; to:-0.4; dir:alternate; dur:4500; loop:true; easing:easeInOutSine"></a-text>
       </a-entity>
 
-      <a-entity id="words-group-3" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.22">
+      <a-entity id="words-group-3" class="words-group" adaptive-scale="factor:0.68; min:0.48; max:2.05; screen:360; lerp:0.08; deadband:0.018">
         <a-entity class="ar-orbit-tags" orbit-tags="words:INOVAÇÃO,PRESENÇA,IDENTIDADE,ESTILO,TECNOLOGIA,DESIGN; radius:1.15; speed:15000" visible="false"></a-entity>
       </a-entity>
 
