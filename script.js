@@ -148,12 +148,216 @@ var currentImageIdx  = 0;
 var activeModelBrandIdx = null;
 var activeModelItemIdx  = null;
 var assetCacheVersion   = Date.now();
+var imageGlowTextureUrl = '';
 
 function withAssetCacheBuster(src) {
   if (!src) return '';
   if (/^(https?:|data:|blob:)/i.test(src)) return src;
   return src + (src.indexOf('?') >= 0 ? '&' : '?') + 'v=' + assetCacheVersion;
 }
+
+function getImageGlowTextureUrl() {
+  if (imageGlowTextureUrl) return imageGlowTextureUrl;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  var ctx = canvas.getContext('2d');
+  var gradient = ctx.createRadialGradient(256, 256, 20, 256, 256, 250);
+
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.36)');
+  gradient.addColorStop(0.16, 'rgba(207, 211, 220, 0.24)');
+  gradient.addColorStop(0.4, 'rgba(233, 69, 96, 0.12)');
+  gradient.addColorStop(0.72, 'rgba(233, 69, 96, 0.04)');
+  gradient.addColorStop(1, 'rgba(233, 69, 96, 0)');
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  imageGlowTextureUrl = canvas.toDataURL('image/png');
+  return imageGlowTextureUrl;
+}
+
+var scratchRevealState = null;
+
+function cancelScratchReveal() {
+  if (!scratchRevealState) return;
+
+  var state = scratchRevealState;
+  scratchRevealState = null;
+
+  window.removeEventListener('resize', state.resize);
+  state.canvas.removeEventListener('pointerdown', state.pointerDown);
+  state.canvas.removeEventListener('pointermove', state.pointerMove);
+  window.removeEventListener('pointerup', state.pointerUp);
+  window.removeEventListener('pointercancel', state.pointerUp);
+
+  state.overlay.classList.add('hidden');
+  state.overlay.setAttribute('aria-hidden', 'true');
+  state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+}
+
+function startScratchReveal(options, done) {
+  var overlay = document.getElementById('scratch-reveal');
+  var canvas = document.getElementById('scratch-canvas');
+  if (!overlay || !canvas) {
+    done();
+    return;
+  }
+
+  cancelScratchReveal();
+
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
+  var threshold = Number(options && options.scratchThreshold ? options.scratchThreshold : 0.2);
+  var brush = Number(options && options.scratchBrush ? options.scratchBrush : 88);
+  var completed = false;
+  var drawing = false;
+  var last = null;
+  var checkCount = 0;
+
+  function resize() {
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintCover();
+  }
+
+  function paintCover() {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    var gradient = ctx.createRadialGradient(
+      window.innerWidth * 0.5,
+      window.innerHeight * 0.42,
+      0,
+      window.innerWidth * 0.5,
+      window.innerHeight * 0.42,
+      Math.max(window.innerWidth, window.innerHeight) * 0.85
+    );
+    gradient.addColorStop(0, 'rgba(16, 16, 18, 0.96)');
+    gradient.addColorStop(0.58, 'rgba(0, 0, 0, 0.98)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+    ctx.fillStyle = 'rgba(233, 69, 96, 0.08)';
+    for (var y = 0; y < window.innerHeight; y += 26) {
+      ctx.fillRect(0, y, window.innerWidth, 1);
+    }
+  }
+
+  function getPoint(event) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+
+  function scratchAt(point) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = brush;
+
+    if (last) {
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, brush * 0.56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    last = point;
+  }
+
+  function getClearedRatio() {
+    var sampleW = 96;
+    var sampleH = Math.max(54, Math.round(sampleW * window.innerHeight / Math.max(window.innerWidth, 1)));
+    var sample = document.createElement('canvas');
+    sample.width = sampleW;
+    sample.height = sampleH;
+    var sampleCtx = sample.getContext('2d', { willReadFrequently: true });
+    sampleCtx.drawImage(canvas, 0, 0, sampleW, sampleH);
+    var data = sampleCtx.getImageData(0, 0, sampleW, sampleH).data;
+    var clearPixels = 0;
+    var total = sampleW * sampleH;
+
+    for (var i = 3; i < data.length; i += 4) {
+      if (data[i] < 32) clearPixels++;
+    }
+
+    return clearPixels / total;
+  }
+
+  function complete() {
+    if (completed) return;
+    completed = true;
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    cancelScratchReveal();
+    done();
+  }
+
+  function maybeComplete(force) {
+    checkCount++;
+    if (!force && checkCount % 5 !== 0) return;
+    if (getClearedRatio() >= threshold) complete();
+  }
+
+  function pointerDown(event) {
+    event.preventDefault();
+    drawing = true;
+    last = null;
+    canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
+    scratchAt(getPoint(event));
+    maybeComplete(false);
+  }
+
+  function pointerMove(event) {
+    if (!drawing) return;
+    event.preventDefault();
+    scratchAt(getPoint(event));
+    maybeComplete(false);
+  }
+
+  function pointerUp(event) {
+    if (!drawing) return;
+    drawing = false;
+    last = null;
+    maybeComplete(true);
+  }
+
+  scratchRevealState = {
+    overlay: overlay,
+    canvas: canvas,
+    ctx: ctx,
+    resize: resize,
+    pointerDown: pointerDown,
+    pointerMove: pointerMove,
+    pointerUp: pointerUp
+  };
+
+  resize();
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  canvas.addEventListener('pointerdown', pointerDown);
+  canvas.addEventListener('pointermove', pointerMove);
+  window.addEventListener('pointerup', pointerUp);
+  window.addEventListener('pointercancel', pointerUp);
+  window.addEventListener('resize', resize);
+}
+
+window.startScratchReveal = startScratchReveal;
+window.cancelScratchReveal = cancelScratchReveal;
 
 // ================================================================
 //  GERACAO MODULAR DOS TARGETS AR
@@ -219,7 +423,9 @@ function getIslandSteps(item) {
         duration: 11200,
         words: item.keywords || [],
         animation: item.wordAnimation || 'vortex',
-        layout: item.wordLayout || 'circle'
+        layout: item.wordLayout || 'circle',
+        backdropEffect: !!item.wordBackdropEffect,
+        fireflyEffect: !!item.wordFireflyEffect
       },
       {
         type: 'actions',
@@ -248,7 +454,9 @@ function getIslandSteps(item) {
         duration: 11200,
         words: item.keywords || [],
         animation: item.wordAnimation || 'vortex',
-        layout: item.wordLayout || 'circle'
+        layout: item.wordLayout || 'circle',
+        backdropEffect: !!item.wordBackdropEffect,
+        fireflyEffect: !!item.wordFireflyEffect
       },
       {
         type: 'phrase',
@@ -307,6 +515,7 @@ function getIslandSteps(item) {
         duration: Number(item.carouselDuration || 0),
         radius: Number(item.carouselRadius || 0.82),
         speed: Number(item.carouselSpeed || 18),
+        focusAnimation: !!item.carouselFocusAnimation,
         itemWidth: Number(item.carouselItemWidth || 0.52),
         itemHeight: Number(item.carouselItemHeight || 0.68),
         modelSize: Number(item.carouselModelSize || 0.46),
@@ -460,7 +669,7 @@ function createTrailTarget(brand, dataIndex) {
     '<a-entity id="image-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
       '<a-entity class="ar-image-card">' +
         '<a-entity class="ar-image-spin">' +
-          '<a-plane class="ar-image-glow" width="0.92" height="0.66" position="0 0 0.006" color="#e94560" opacity="0.18" material="shader:flat; transparent:true" visible="false"></a-plane>' +
+          '<a-plane class="ar-image-glow" width="1.18" height="0.92" position="0 0 0.006" opacity="0.82" material="shader:flat; transparent:true; depthWrite:false; side:double" visible="false"></a-plane>' +
           '<a-plane class="ar-image-bg" width="0.82" height="0.56" position="0 0 0.012" color="#ffffff" material="shader:flat; side:double"></a-plane>' +
           '<a-plane class="ar-image-plane" width="0.82" height="0.56" position="0 0 0.02" material="shader:flat; transparent:true; side:front"></a-plane>' +
         '</a-entity>' +
@@ -653,7 +862,12 @@ function registerTargetAnimations() {
     var carouselShowcaseEl = targetEl.querySelector('#carousel-showcase-' + idx);
     var carouselStageEl = carouselShowcaseEl ? carouselShowcaseEl.querySelector('.ar-carousel-stage') : null;
     var carouselTitleEl = carouselShowcaseEl ? carouselShowcaseEl.querySelector('.ar-carousel-title') : null;
+    var carouselFocusFrame = null;
+    var carouselFocusState = null;
     var phraseTypingTimer = null;
+    var wordBackdropTimer = null;
+    var wordBackdropFrame = null;
+    var fireflyWorldPos = new THREE.Vector3();
     var sequenceTimers = [];
 
     function setIntroText(selector, text) {
@@ -725,7 +939,10 @@ function registerTargetAnimations() {
       if (brandEl)  brandEl.setAttribute('visible', false);
       if (centerEl) centerEl.setAttribute('visible', false);
       if (scanEl)   scanEl.setAttribute('visible', false);
+      cancelScratchReveal();
+      clearWordBackdrop(false);
       if (darkOverlay) darkOverlay.classList.add('hidden');
+      if (darkOverlay) darkOverlay.classList.remove('image-glow-backdrop');
       if (modelShowcaseEl) modelShowcaseEl.setAttribute('visible', false);
       if (imageShowcaseEl) {
         imageShowcaseEl.setAttribute('visible', false);
@@ -757,6 +974,7 @@ function registerTargetAnimations() {
         carouselShowcaseEl.setAttribute('position', '0 0.05 0.28');
         carouselShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
       }
+      stopCarouselFocus();
       if (carouselStageEl) {
         carouselStageEl.removeAttribute('continuous-spin');
         while (carouselStageEl.firstChild) {
@@ -951,12 +1169,90 @@ function registerTargetAnimations() {
       });
     }
 
-    function burstWords() {
+    function burstWords(duration) {
       if (!orbitEl) return;
       orbitEl.setAttribute('visible', true);
       if (orbitEl.components && orbitEl.components['orbit-tags']) {
-        orbitEl.components['orbit-tags'].present();
+        orbitEl.components['orbit-tags'].present(duration);
       }
+    }
+
+    function isOptionEnabled(value) {
+      return value === true || value === 'true' || value === 1 || value === '1' || value === 'on';
+    }
+
+    function clearWordBackdrop(keepVisible) {
+      if (wordBackdropTimer) {
+        clearTimeout(wordBackdropTimer);
+        wordBackdropTimer = null;
+      }
+      if (wordBackdropFrame) {
+        cancelAnimationFrame(wordBackdropFrame);
+        wordBackdropFrame = null;
+      }
+      if (!darkOverlay) return;
+      darkOverlay.classList.remove('word-backdrop');
+      darkOverlay.classList.remove('word-firefly-backdrop');
+      darkOverlay.classList.remove('image-glow-backdrop');
+      darkOverlay.style.removeProperty('--word-backdrop-duration');
+      darkOverlay.style.removeProperty('--firefly-x1');
+      darkOverlay.style.removeProperty('--firefly-y1');
+      darkOverlay.style.removeProperty('--firefly-x2');
+      darkOverlay.style.removeProperty('--firefly-y2');
+      darkOverlay.style.removeProperty('--firefly-x3');
+      darkOverlay.style.removeProperty('--firefly-y3');
+      if (!keepVisible) darkOverlay.classList.add('hidden');
+    }
+
+    function updateFireflyMask() {
+      if (!darkOverlay || !darkOverlay.classList.contains('word-firefly-backdrop') || cancelled) {
+        wordBackdropFrame = null;
+        return;
+      }
+
+      var sceneEl = document.getElementById('ar-scene');
+      var camera = sceneEl && sceneEl.camera;
+      var tags = orbitEl && orbitEl.components && orbitEl.components['orbit-tags'] && orbitEl.components['orbit-tags']._tags;
+
+      if (camera && tags && tags.length) {
+        for (var i = 0; i < 3; i++) {
+          var tagData = tags[i] || tags[tags.length - 1];
+          if (!tagData || !tagData.el || !tagData.el.object3D) continue;
+
+          tagData.el.object3D.getWorldPosition(fireflyWorldPos);
+          fireflyWorldPos.project(camera);
+
+          var x = Math.max(0, Math.min(100, (fireflyWorldPos.x * 0.5 + 0.5) * 100));
+          var y = Math.max(0, Math.min(100, (-fireflyWorldPos.y * 0.5 + 0.5) * 100));
+          darkOverlay.style.setProperty('--firefly-x' + (i + 1), x.toFixed(2) + '%');
+          darkOverlay.style.setProperty('--firefly-y' + (i + 1), y.toFixed(2) + '%');
+        }
+      }
+
+      wordBackdropFrame = requestAnimationFrame(updateFireflyMask);
+    }
+
+    function startWordBackdrop(options) {
+      if (!darkOverlay) return;
+
+      var useReveal = isOptionEnabled(options.backdropEffect || options.wordBackdropEffect);
+      var useFirefly = isOptionEnabled(options.fireflyEffect || options.wordFireflyEffect);
+      if (!useReveal && !useFirefly) return;
+
+      var duration = Number(options.backdropDuration || options.duration || 5600);
+      clearWordBackdrop(false);
+      darkOverlay.style.setProperty('--word-backdrop-duration', duration + 'ms');
+      darkOverlay.classList.remove('hidden');
+      void darkOverlay.offsetWidth;
+      darkOverlay.classList.add(useFirefly ? 'word-firefly-backdrop' : 'word-backdrop');
+      if (useFirefly) {
+        updateFireflyMask();
+      }
+
+      wordBackdropTimer = setTimeout(function () {
+        clearWordBackdrop(false);
+      }, duration + 280);
+      sequenceTimers.push(wordBackdropTimer);
     }
 
     function playWordSequence(next, options) {
@@ -974,6 +1270,7 @@ function registerTargetAnimations() {
         orbitEl.setAttribute('orbit-tags', 'width', isFinite(Number(options.wordWidth)) ? Number(options.wordWidth) : 0.84);
         orbitEl.setAttribute('orbit-tags', 'height', isFinite(Number(options.wordHeight)) ? Number(options.wordHeight) : 0.23);
         orbitEl.setAttribute('orbit-tags', 'layout', options.layout || options.wordLayout || 'circle');
+        orbitEl.setAttribute('orbit-tags', 'firefly', isOptionEnabled(options.fireflyEffect || options.wordFireflyEffect));
       }
 
       if (!orbitEl || !orbitEl.components || !orbitEl.components['orbit-tags']) {
@@ -981,10 +1278,15 @@ function registerTargetAnimations() {
         return;
       }
 
+      startWordBackdrop(options);
+
       if (options.animation === 'orbit') {
         orbitEl.setAttribute('visible', true);
         orbitEl.components['orbit-tags'].startOrbit();
-        var orbitTimer = setTimeout(next, Number(options.duration || 4200));
+        var orbitTimer = setTimeout(function () {
+          clearWordBackdrop(false);
+          next();
+        }, Number(options.duration || 4200));
         sequenceTimers.push(orbitTimer);
         return;
       }
@@ -995,11 +1297,18 @@ function registerTargetAnimations() {
         if (completed) return;
         completed = true;
         orbitEl.removeEventListener('word-sequence-complete', done);
+        clearWordBackdrop(false);
         next();
       };
       orbitEl.addEventListener('word-sequence-complete', done);
       orbitEl.setAttribute('visible', true);
-      if (wordAnimation === 'wave' && orbitEl.components['orbit-tags'].presentWave) {
+      if (wordAnimation === 'clickCollect' && orbitEl.components['orbit-tags'].presentClickCollect) {
+        orbitEl.components['orbit-tags'].presentClickCollect(Number(options.duration || 0));
+      } else if (wordAnimation === 'dragCenter' && orbitEl.components['orbit-tags'].presentDragCenter) {
+        orbitEl.components['orbit-tags'].presentDragCenter(Number(options.duration || 0));
+      } else if (wordAnimation === 'scratchFind' && orbitEl.components['orbit-tags'].presentScratchFind) {
+        orbitEl.components['orbit-tags'].presentScratchFind(Number(options.duration || 0));
+      } else if (wordAnimation === 'wave' && orbitEl.components['orbit-tags'].presentWave) {
         orbitEl.components['orbit-tags'].presentWave(Number(options.duration || 5200));
       } else if (wordAnimation === 'spiral' && orbitEl.components['orbit-tags'].presentSpiral) {
         orbitEl.components['orbit-tags'].presentSpiral(Number(options.duration || 5600));
@@ -1008,14 +1317,17 @@ function registerTargetAnimations() {
       } else if (wordAnimation === 'constellation' && orbitEl.components['orbit-tags'].presentConstellation) {
         orbitEl.components['orbit-tags'].presentConstellation(Number(options.duration || 5200));
       } else {
-        burstWords();
+        burstWords(Number(options.duration || 11200));
       }
-      var fallback = setTimeout(done, Number(options.duration || 11200));
-      sequenceTimers.push(fallback);
+      if (wordAnimation !== 'clickCollect' && wordAnimation !== 'dragCenter' && wordAnimation !== 'scratchFind') {
+        var fallback = setTimeout(done, Number(options.duration || 11200) + 1400);
+        sequenceTimers.push(fallback);
+      }
     }
 
     function showFinalStage(ctaText) {
       if (finalCtaEl && ctaText) finalCtaEl.setAttribute('hud-label', 'text', ctaText);
+      clearWordBackdrop(true);
       if (darkOverlay) darkOverlay.classList.remove('hidden');
       if (!finalCtaEl) return;
       var labelData = finalCtaEl.getAttribute('hud-label');
@@ -1226,6 +1538,9 @@ function registerTargetAnimations() {
       card.setAttribute('position', x + ' 0 ' + z);
       card.setAttribute('rotation', '0 ' + angleDeg + ' 0');
       card.setAttribute('scale', '0.001 0.001 0.001');
+      card.dataset.carouselIndex = String(index);
+      card.dataset.basePosition = x + ' 0 ' + z;
+      card.dataset.baseRotation = '0 ' + angleDeg + ' 0';
       card.setAttribute('animation__in',
         'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:420; delay:' +
         (index * 90) + '; easing:easeOutBack');
@@ -1271,6 +1586,172 @@ function registerTargetAnimations() {
       return card;
     }
 
+    function stopCarouselFocus() {
+      if (carouselFocusFrame) {
+        cancelAnimationFrame(carouselFocusFrame);
+        carouselFocusFrame = null;
+      }
+      if (carouselFocusState && carouselFocusState.focusEl && carouselFocusState.focusEl.parentNode) {
+        carouselFocusState.focusEl.parentNode.removeChild(carouselFocusState.focusEl);
+      }
+      carouselFocusState = null;
+      if (!carouselStageEl) return;
+      Array.from(carouselStageEl.children).forEach(function (cardEl) {
+        if (cardEl.dataset.basePosition) cardEl.setAttribute('position', cardEl.dataset.basePosition);
+        if (cardEl.dataset.baseRotation) cardEl.setAttribute('rotation', cardEl.dataset.baseRotation);
+        if (cardEl.object3D) cardEl.object3D.scale.set(1, 1, 1);
+      });
+    }
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function createFocusedCarouselCard(item, options) {
+      var width = Number(options.itemWidth || 0.52);
+      var height = Number(options.itemHeight || 0.68);
+      var cardBg = options.cardBg || '#ffffff';
+      var card = document.createElement('a-entity');
+
+      card.classList.add('ar-carousel-focus-card');
+      card.setAttribute('position', '0 ' + Number(options.focusY || 0.04) + ' ' + Number(options.focusZ || 0.72));
+      card.setAttribute('rotation', '0 0 0');
+      card.setAttribute('scale', '0.001 0.001 0.001');
+
+      if (item.model) {
+        var model = document.createElement('a-gltf-model');
+        model.setAttribute('src', withAssetCacheBuster(item.model));
+        model.setAttribute('position', '0 0.04 0.06');
+        model.setAttribute('rotation', '0 0 0');
+        model.setAttribute('scale', item.modelScale || options.modelScale || '0.45 0.45 0.45');
+        model.setAttribute('fit-gltf-model', 'size: ' + Number(options.modelSize || 0.46));
+        model.setAttribute('continuous-spin', 'axis:y; speed:' + Number(item.spinSpeed || options.itemSpinSpeed || 20));
+        card.appendChild(model);
+      } else {
+        var backing = document.createElement('a-plane');
+        backing.setAttribute('position', '0 0 0.018');
+        backing.setAttribute('width', width);
+        backing.setAttribute('height', height);
+        backing.setAttribute('material', {
+          shader: 'flat',
+          color: cardBg,
+          transparent: false,
+          side: 'double'
+        });
+        card.appendChild(backing);
+
+        var plane = document.createElement('a-plane');
+        plane.setAttribute('position', '0 0 0.025');
+        plane.setAttribute('width', width);
+        plane.setAttribute('height', height);
+        plane.setAttribute('material', {
+          shader: 'flat',
+          src: withAssetCacheBuster(item.image),
+          transparent: true,
+          side: 'front'
+        });
+        card.appendChild(plane);
+      }
+
+      var label = makeCarouselLabel(item, options, width, height);
+      if (label) card.appendChild(label);
+
+      return card;
+    }
+
+    function clearFocusedCarouselCard() {
+      if (!carouselFocusState || !carouselFocusState.focusEl) return;
+      var focusEl = carouselFocusState.focusEl;
+      focusEl.removeAttribute('animation__focusin');
+      focusEl.setAttribute('animation__focusout',
+        'property:scale; to:0.001 0.001 0.001; dur:260; easing:easeInBack');
+      var removeTimer = setTimeout(function () {
+        if (focusEl.parentNode) focusEl.parentNode.removeChild(focusEl);
+      }, 280);
+      sequenceTimers.push(removeTimer);
+      carouselFocusState.focusEl = null;
+    }
+
+    function showFocusedCarouselCard(index, options) {
+      if (!carouselShowcaseEl || !carouselFocusState || !carouselFocusState.items[index]) return;
+      clearFocusedCarouselCard();
+
+      var focusScale = Number(options.focusScale || 2.15);
+      var focusEl = createFocusedCarouselCard(carouselFocusState.items[index], options);
+      carouselShowcaseEl.appendChild(focusEl);
+      carouselFocusState.focusEl = focusEl;
+
+      focusEl.setAttribute('animation__focusin',
+        'property:scale; from:0.001 0.001 0.001; to:' + focusScale + ' ' + focusScale + ' ' + focusScale +
+        '; dur:460; easing:easeOutBack');
+    }
+
+    function startCarouselFocus(items, options) {
+      var total = items.length;
+      if (!carouselStageEl || total <= 1) return;
+
+      stopCarouselFocus();
+      carouselStageEl.removeAttribute('continuous-spin');
+
+      var spinMs = Number(options.focusSpinDuration || 1200);
+      var holdMs = Number(options.focusHoldDuration || 900);
+      var zoomMs = Number(options.focusZoomDuration || 420);
+      var rotationsPerStep = Number(options.focusRotations || 1.25);
+      var segmentMs = spinMs + holdMs + zoomMs;
+      var stepAngle = 360 / total;
+
+      carouselFocusState = {
+        start: null,
+        currentIndex: -1,
+        focusEl: null,
+        items: items,
+        total: total,
+        stepAngle: stepAngle,
+        segmentMs: segmentMs
+      };
+
+      function tick(time) {
+        if (!carouselFocusState || cancelled || !carouselStageEl) {
+          carouselFocusFrame = null;
+          return;
+        }
+
+        if (carouselFocusState.start === null) carouselFocusState.start = time;
+
+        var elapsed = time - carouselFocusState.start;
+        var segmentIndex = Math.floor(elapsed / segmentMs);
+        var local = elapsed % segmentMs;
+        var targetIndex = segmentIndex % total;
+        var previousAngle = segmentIndex * stepAngle;
+        var targetAngle = (segmentIndex + 1) * stepAngle;
+        var fastAngle = rotationsPerStep * 360;
+        var rotation;
+
+        if (local < spinMs) {
+          var t = easeInOutCubic(local / spinMs);
+          rotation = previousAngle + fastAngle * t + stepAngle * t;
+        } else {
+          rotation = targetAngle;
+        }
+
+        carouselStageEl.object3D.rotation.y = THREE.MathUtils.degToRad(rotation);
+
+        if (local >= spinMs && carouselFocusState.currentIndex !== targetIndex) {
+          carouselFocusState.currentIndex = targetIndex;
+          showFocusedCarouselCard(targetIndex, options);
+        }
+
+        if (local > spinMs + holdMs && carouselFocusState.currentIndex === targetIndex) {
+          carouselFocusState.currentIndex = -1;
+          clearFocusedCarouselCard();
+        }
+
+        carouselFocusFrame = requestAnimationFrame(tick);
+      }
+
+      carouselFocusFrame = requestAnimationFrame(tick);
+    }
+
     function normalizeImageInteractions(value) {
       return (Array.isArray(value) ? value : String(value || '').split(/\n|,/))
         .map(function (item) { return String(item).trim(); })
@@ -1279,8 +1760,8 @@ function registerTargetAnimations() {
 
     function setImageGlowSize(width, height) {
       if (!imageGlowEl) return;
-      imageGlowEl.setAttribute('width', width + 0.1);
-      imageGlowEl.setAttribute('height', height + 0.1);
+      imageGlowEl.setAttribute('width', width + 0.72);
+      imageGlowEl.setAttribute('height', height + 0.72);
     }
 
     function hideImageShowcase() {
@@ -1292,6 +1773,10 @@ function registerTargetAnimations() {
         if (cancelled || !imageShowcaseEl) return;
         imageShowcaseEl.setAttribute('visible', false);
         imageShowcaseEl.removeAttribute('animation__out');
+        if (darkOverlay) {
+          darkOverlay.classList.remove('image-glow-backdrop');
+          darkOverlay.classList.add('hidden');
+        }
       }, 240);
       sequenceTimers.push(hideTimer);
     }
@@ -1344,8 +1829,24 @@ function registerTargetAnimations() {
         imageGlowEl.setAttribute('visible', hasInteraction('glow'));
         imageGlowEl.removeAttribute('animation__glow');
         if (hasInteraction('glow')) {
+          if (darkOverlay) {
+            darkOverlay.classList.remove('word-backdrop');
+            darkOverlay.classList.remove('word-firefly-backdrop');
+            darkOverlay.classList.add('image-glow-backdrop');
+            darkOverlay.classList.remove('hidden');
+          }
+          imageGlowEl.setAttribute('material', {
+            shader: 'flat',
+            src: getImageGlowTextureUrl(),
+            transparent: true,
+            opacity: 0.95,
+            depthWrite: false,
+            side: 'double'
+          });
           imageGlowEl.setAttribute('animation__glow',
-            'property:opacity; from:0.12; to:0.34; dir:alternate; dur:1200; loop:true; easing:easeInOutSine');
+            'property:material.opacity; from:0.55; to:0.95; dir:alternate; dur:1350; loop:true; easing:easeInOutSine');
+        } else if (darkOverlay) {
+          darkOverlay.classList.remove('image-glow-backdrop');
         }
       }
 
@@ -1406,12 +1907,22 @@ function registerTargetAnimations() {
       while (carouselStageEl.firstChild) {
         carouselStageEl.removeChild(carouselStageEl.firstChild);
       }
+      stopCarouselFocus();
+      carouselStageEl.object3D.rotation.set(0, 0, 0);
 
       items.forEach(function (item, index) {
         carouselStageEl.appendChild(createCarouselCard(item, index, items.length, options));
       });
 
-      carouselStageEl.setAttribute('continuous-spin', 'axis:y; speed:' + Number(options.speed || 18));
+      if (isOptionEnabled(options.focusAnimation || brandData.carouselFocusAnimation)) {
+        carouselStageEl.removeAttribute('continuous-spin');
+        var focusStartTimer = setTimeout(function () {
+          startCarouselFocus(items, options);
+        }, Math.min(900, 360 + items.length * 90));
+        sequenceTimers.push(focusStartTimer);
+      } else {
+        carouselStageEl.setAttribute('continuous-spin', 'axis:y; speed:' + Number(options.speed || 18));
+      }
 
       if (carouselTitleEl) {
         var title = options.title || brandData.carouselTitle || '';
@@ -1526,6 +2037,8 @@ function registerTargetAnimations() {
           fn: function (next) {
             var type = step.type || 'scanner';
             var actionName = getFeatureAction(type);
+
+            function runStep() {
             showStepTitle(step);
 
             if (type === 'logoText') {
@@ -1655,6 +2168,16 @@ function registerTargetAnimations() {
             }
 
             next();
+            }
+
+            if (isOptionEnabled(step.scratchEffect)) {
+              startScratchReveal(step, function () {
+                if (!cancelled) runStep();
+              });
+              return;
+            }
+
+            runStep();
           }
         };
       }));

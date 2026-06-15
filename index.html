@@ -570,10 +570,16 @@
         font:   { type: 'number', default: 56 },
         width:  { type: 'number', default: 0.84 },
         height: { type: 'number', default: 0.23 },
-        layout: { default: 'circle' }
+        layout: { default: 'circle' },
+        firefly:{ type: 'boolean', default: false }
       },
       init: function () {
         this._tags = [];
+        this._driftTimers = [];
+        this._interactionCleanups = [];
+        this._completedWords = 0;
+        this._completeEl = null;
+        this._dropZoneEl = null;
         this._startTime = null;
         this._orbiting = false;
         this._completeTimer = null;
@@ -589,7 +595,8 @@
           oldData.font !== this.data.font ||
           oldData.width !== this.data.width ||
           oldData.height !== this.data.height ||
-          oldData.layout !== this.data.layout
+          oldData.layout !== this.data.layout ||
+          oldData.firefly !== this.data.firefly
         ) {
           this.buildTags();
         }
@@ -616,6 +623,8 @@
           tag.setAttribute('scale', '0.001 0.001 0.001');
 
           var label = document.createElement('a-entity');
+          label.classList.add('clickable');
+          label.classList.add('ar-word-label');
           label.setAttribute('hud-label',
             'text:' + word +
             '; width:' + this.data.width +
@@ -625,7 +634,22 @@
             '; font:' + this.data.font);
           tag.appendChild(label);
           this.el.appendChild(tag);
-          this._tags.push({ el: tag, angle: angle, index: i, x: pos.x, y: pos.y });
+          this._tags.push({
+            el: tag,
+            label: label,
+            angle: angle,
+            index: i,
+            x: pos.x,
+            y: pos.y,
+            driftActive: false,
+            driftPhaseX: Math.random() * Math.PI * 2,
+            driftPhaseY: Math.random() * Math.PI * 2,
+            driftSpeedX: 0.82 + Math.random() * 0.42,
+            driftSpeedY: 0.68 + Math.random() * 0.36,
+            driftAmpX: 0.14 + Math.random() * 0.07,
+            driftAmpY: 0.09 + Math.random() * 0.055,
+            completed: false
+          });
         }, this);
       },
       getTagPosition: function (angle, total, index) {
@@ -686,6 +710,8 @@
       reset: function () {
         this._orbiting = false;
         this._startTime = null;
+        this.clearInteractions();
+        this.clearDriftTimers();
         if (this._completeTimer) {
           clearTimeout(this._completeTimer);
           this._completeTimer = null;
@@ -713,10 +739,170 @@
           tagData.el.removeAttribute('animation__exitpos');
           tagData.el.removeAttribute('animation__exitscale');
           tagData.el.removeAttribute('animation__pulse');
+          tagData.el.removeAttribute('animation__collectscale');
+          tagData.el.removeAttribute('animation__collectpos');
           tagData.el.setAttribute('position', '0 0 0.17');
           tagData.el.setAttribute('rotation', '0 0 0');
           tagData.el.setAttribute('scale', '0.001 0.001 0.001');
+          tagData.driftActive = false;
+          tagData.completed = false;
+          if (tagData.label) {
+            tagData.label.setAttribute('position', '0 0 0');
+            tagData.label.setAttribute('rotation', '0 0 0');
+            tagData.label.setAttribute('hud-label', 'bg', this.data.bg);
+            tagData.label.setAttribute('hud-label', 'color', this.data.color);
+          }
         });
+      },
+      clearInteractions: function () {
+        if (!this._interactionCleanups) this._interactionCleanups = [];
+        this._interactionCleanups.forEach(function (cleanup) { cleanup(); });
+        this._interactionCleanups = [];
+        this._completedWords = 0;
+        if (window.cancelScratchReveal) window.cancelScratchReveal();
+        if (this._completeEl && this._completeEl.parentNode) {
+          this._completeEl.parentNode.removeChild(this._completeEl);
+        }
+        this._completeEl = null;
+        if (this._dropZoneEl && this._dropZoneEl.parentNode) {
+          this._dropZoneEl.parentNode.removeChild(this._dropZoneEl);
+        }
+        this._dropZoneEl = null;
+      },
+      clearDriftTimers: function () {
+        if (!this._driftTimers) this._driftTimers = [];
+        this._driftTimers.forEach(function (timer) { clearTimeout(timer); });
+        this._driftTimers = [];
+      },
+      setTagDrift: function (tagData, active) {
+        tagData.driftActive = active;
+        tagData.driftStartedAt = active ? performance.now() : null;
+        if (!active && tagData.label) {
+          tagData.label.setAttribute('position', '0 0 0');
+          tagData.label.setAttribute('rotation', '0 0 0');
+        }
+      },
+      getDriftOffset: function (tagData, time) {
+        var driftTime = time * 0.001;
+        var x = Math.sin(driftTime * tagData.driftSpeedX + tagData.driftPhaseX) * tagData.driftAmpX;
+        var y = Math.cos(driftTime * tagData.driftSpeedY + tagData.driftPhaseY) * tagData.driftAmpY;
+
+        x += Math.sin(driftTime * 0.19 + tagData.index * 1.73) * tagData.driftAmpX * 0.58;
+        y += Math.cos(driftTime * 0.17 + tagData.index * 1.31) * tagData.driftAmpY * 0.55;
+
+        var fade = tagData.driftStartedAt ? Math.min(1, Math.max(0, (time - tagData.driftStartedAt) / 850)) : 1;
+        x *= fade;
+        y *= fade;
+
+        return { x: x, y: y };
+      },
+      scheduleTagDrift: function (tagData, startDelay, stopDelay) {
+        this._driftTimers.push(setTimeout(function () {
+          this.setTagDrift(tagData, true);
+        }.bind(this), Math.max(0, startDelay || 0)));
+
+        if (isFinite(stopDelay) && stopDelay > startDelay) {
+          this._driftTimers.push(setTimeout(function () {
+            this.setTagDrift(tagData, false);
+          }.bind(this), Math.max(0, stopDelay)));
+        }
+      },
+      scheduleSoftDrift: function (startDelay, stopDelay) {
+        if (!this._tags) return;
+        this._tags.forEach(function (tagData, i) {
+          this.scheduleTagDrift(tagData, (startDelay || 0) + i * 55, stopDelay);
+        }, this);
+      },
+      showStaticTags: function (scaleValue) {
+        var scale = scaleValue || '0.96 0.96 0.96';
+        if (!this._tags) return;
+        this._tags.forEach(function (tagData, i) {
+          tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.17');
+          tagData.el.setAttribute('rotation', '0 0 0');
+          tagData.el.setAttribute('scale', scale);
+          tagData.completed = false;
+          if (tagData.label) {
+            tagData.label.setAttribute('hud-label', 'bg', this.data.bg);
+            tagData.label.setAttribute('hud-label', 'color', this.data.color);
+          }
+        }, this);
+      },
+      markTagComplete: function (tagData) {
+        if (!tagData || tagData.completed) return;
+        tagData.completed = true;
+        this._completedWords++;
+        this.setTagDrift(tagData, false);
+        if (tagData.label) {
+          tagData.label.setAttribute('hud-label', 'bg', 'rgba(34,197,94,0.82)');
+          tagData.label.setAttribute('hud-label', 'color', '#ffffff');
+        }
+        tagData.el.removeAttribute('animation__pulse');
+        tagData.el.setAttribute('animation__collectscale',
+          'property:scale; from:0.96 0.96 0.96; to:1.1 1.1 1.1; dir:alternate; dur:220; loop:2; easing:easeInOutSine');
+      },
+      maybeFinishInteractive: function () {
+        if (!this._tags || this._completedWords < this._tags.length) return;
+        this.finishInteractiveWords();
+      },
+      finishInteractiveWords: function () {
+        this.clearDriftTimers();
+        this._orbiting = false;
+
+        if (!this._completeEl) {
+          this._completeEl = document.createElement('a-entity');
+          this._completeEl.setAttribute('hud-label',
+            'text:CONCLUIDO; width:1.1; height:0.24; bg:rgba(34,197,94,0.86); color:#ffffff; font:58; variant:glass');
+          this._completeEl.setAttribute('position', '0 0 0.32');
+          this._completeEl.setAttribute('scale', '0.001 0.001 0.001');
+          this.el.appendChild(this._completeEl);
+        }
+
+        this._completeEl.setAttribute('animation__done',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:360; easing:easeOutBack');
+
+        if (this._completeTimer) clearTimeout(this._completeTimer);
+        this._completeTimer = setTimeout(function () {
+          this.el.setAttribute('visible', false);
+          this.el.emit('word-sequence-complete');
+        }.bind(this), 950);
+      },
+      showDropZone: function () {
+        if (this._dropZoneEl) return;
+        var zone = document.createElement('a-ring');
+        zone.setAttribute('radius-inner', '0.13');
+        zone.setAttribute('radius-outer', '0.18');
+        zone.setAttribute('position', '0 0 0.14');
+        zone.setAttribute('color', '#22c55e');
+        zone.setAttribute('opacity', '0.72');
+        zone.setAttribute('material', 'shader:flat; transparent:true; depthTest:false');
+        zone.setAttribute('animation__pulse',
+          'property:scale; from:0.9 0.9 0.9; to:1.12 1.12 1.12; dir:alternate; dur:780; loop:true; easing:easeInOutSine');
+        this.el.appendChild(zone);
+        this._dropZoneEl = zone;
+      },
+      moveTagToCenter: function (tagData, scaleValue, spinTurns) {
+        var position = tagData.el.getAttribute('position') || { x: tagData.x, y: tagData.y, z: 0.17 };
+        var scale = tagData.el.getAttribute('scale') || { x: 0.96, y: 0.96, z: 0.96 };
+        var fromScale = scaleValue || (scale.x + ' ' + scale.y + ' ' + scale.z);
+        var spin = isFinite(Number(spinTurns)) ? Number(spinTurns) : 0;
+
+        this.setTagDrift(tagData, false);
+        tagData.el.removeAttribute('animation__exitpos');
+        tagData.el.removeAttribute('animation__exitscale');
+        tagData.el.removeAttribute('animation__vortexpos');
+        tagData.el.removeAttribute('animation__vortexscale');
+        tagData.el.removeAttribute('animation__vortexspin');
+        tagData.el.setAttribute('position', position.x + ' ' + position.y + ' ' + position.z);
+
+        if (spin) {
+          tagData.el.setAttribute('animation__vortexspin',
+            'property:rotation; from:0 0 0; to:0 0 ' + spin + '; dur:900; easing:easeInCubic');
+        }
+        tagData.el.setAttribute('animation__vortexpos',
+          'property:position; from:' + position.x + ' ' + position.y + ' ' + position.z +
+          '; to:0 0 0.24; dur:900; easing:easeInCubic');
+        tagData.el.setAttribute('animation__vortexscale',
+          'property:scale; from:' + fromScale + '; to:0.001 0.001 0.001; dur:520; delay:380; easing:easeInBack');
       },
       completeAfter: function (duration) {
         var wait = Math.max(1800, Number(duration || 5200));
@@ -730,23 +916,23 @@
         var wait = Math.max(1800, Number(duration || 5200));
         var outDelay = Math.max(1200, wait - 560);
         var scale = scaleValue || '0.96 0.96 0.96';
+        this.scheduleSoftDrift(Math.min(1700, Math.max(900, outDelay - 2200)), Math.max(900, outDelay - 90));
 
         this._tags.forEach(function (tagData, i) {
           var delay = outDelay + i * 24;
-          tagData.el.setAttribute('animation__exitpos',
-            'property:position; from:' + tagData.x + ' ' + tagData.y +
-            ' 0.17; to:0 0 0.24; dur:520; delay:' + delay + '; easing:easeInCubic');
-          tagData.el.setAttribute('animation__exitscale',
-            'property:scale; from:' + scale + '; to:0.001 0.001 0.001; dur:420; delay:' + delay +
-            '; easing:easeInBack');
-        });
+          this._driftTimers.push(setTimeout(function () {
+            this.moveTagToCenter(tagData, scale, 0);
+          }.bind(this), delay));
+        }, this);
 
-        this.completeAfter(wait + 80);
+        this.completeAfter(wait + 760);
       },
-      present: function () {
+      present: function (duration) {
         this.reset();
         if (!this._tags) return;
         var step = this.data.hold + 900;
+        var minimumTotal = this._tags.length * step + 1700;
+        var totalDuration = Math.max(minimumTotal, Number(duration || minimumTotal));
 
         this._tags.forEach(function (tagData, i) {
           var delay = i * step;
@@ -768,22 +954,22 @@
             '; easing:easeOutCubic');
         }, this);
 
-        var vortexDelay = this._tags.length * step + 400;
+        var vortexDelay = Math.max(this._tags.length * step + 400, totalDuration - 1300);
+        this._tags.forEach(function (tagData, i) {
+          var settleEnd = i * step + this.data.hold + 650;
+          this.scheduleTagDrift(tagData, settleEnd, Math.max(settleEnd + 120, vortexDelay - 80));
+        }, this);
+
         this._tags.forEach(function (tagData, i) {
           var delay = vortexDelay + i * 70;
-          tagData.el.setAttribute('animation__vortexspin',
-            'property:rotation; from:0 0 0; to:0 0 720; dur:900; delay:' + delay + '; easing:easeInCubic');
-          tagData.el.setAttribute('animation__vortexpos',
-            'property:position; from:' + tagData.x + ' ' + tagData.y +
-            ' 0.17; to:0 0 0.24; dur:900; delay:' + delay + '; easing:easeInCubic');
-          tagData.el.setAttribute('animation__vortexscale',
-            'property:scale; from:0.96 0.96 0.96; to:0.001 0.001 0.001; dur:520; delay:' + (delay + 380) +
-            '; easing:easeInBack');
-        });
+          this._driftTimers.push(setTimeout(function () {
+            this.moveTagToCenter(tagData, '0.96 0.96 0.96', 720);
+          }.bind(this), delay));
+        }, this);
 
         this._completeTimer = setTimeout(function () {
           this.el.emit('word-sequence-complete');
-        }.bind(this), vortexDelay + 1300);
+        }.bind(this), totalDuration);
       },
       presentWave: function (duration) {
         this.reset();
@@ -885,6 +1071,126 @@
 
         this.finishPresentation(duration || 5200, '1.02 1.02 1.02');
       },
+      presentClickCollect: function (duration) {
+        this.reset();
+        if (!this._tags || !this._tags.length) {
+          this.completeAfter(duration);
+          return;
+        }
+
+        this.showStaticTags('0.96 0.96 0.96');
+        this.scheduleSoftDrift(420, Number(duration || 0) > 0 ? Number(duration) : Infinity);
+
+        this._tags.forEach(function (tagData, i) {
+          var onClick = function (evt) {
+            if (evt && evt.stopPropagation) evt.stopPropagation();
+            this.markTagComplete(tagData);
+            this.maybeFinishInteractive();
+          }.bind(this);
+
+          tagData.label.addEventListener('click', onClick);
+          tagData.label.addEventListener('mousedown', onClick);
+          this._interactionCleanups.push(function () {
+            tagData.label.removeEventListener('click', onClick);
+            tagData.label.removeEventListener('mousedown', onClick);
+          });
+        }, this);
+      },
+      presentDragCenter: function (duration) {
+        this.reset();
+        if (!this._tags || !this._tags.length) {
+          this.completeAfter(duration);
+          return;
+        }
+
+        this.showStaticTags('0.96 0.96 0.96');
+        this.showDropZone();
+
+        this._tags.forEach(function (tagData) {
+          var drag = null;
+          var startDrag = function (evt) {
+            if (tagData.completed) return;
+            if (evt && evt.stopPropagation) evt.stopPropagation();
+            var src = evt && evt.detail && evt.detail.mouseEvent ? evt.detail.mouseEvent : evt;
+            var point = src && src.touches && src.touches[0] ? src.touches[0] : src;
+            var pos = tagData.el.getAttribute('position') || { x: tagData.x, y: tagData.y, z: 0.17 };
+            drag = {
+              x: point && isFinite(point.clientX) ? point.clientX : window.innerWidth / 2,
+              y: point && isFinite(point.clientY) ? point.clientY : window.innerHeight / 2,
+              startX: pos.x,
+              startY: pos.y
+            };
+            this.setTagDrift(tagData, false);
+            window.addEventListener('pointermove', moveDrag);
+            window.addEventListener('pointerup', endDrag);
+            window.addEventListener('pointercancel', endDrag);
+          }.bind(this);
+
+          var moveDrag = function (evt) {
+            if (!drag || tagData.completed) return;
+            evt.preventDefault();
+            var dx = (evt.clientX - drag.x) / Math.max(window.innerWidth, 1);
+            var dy = (evt.clientY - drag.y) / Math.max(window.innerHeight, 1);
+            var x = drag.startX + dx * 2.1;
+            var y = drag.startY - dy * 1.45;
+            x = Math.max(-0.86, Math.min(0.86, x));
+            y = Math.max(-0.58, Math.min(0.58, y));
+            tagData.el.setAttribute('position', x.toFixed(4) + ' ' + y.toFixed(4) + ' 0.17');
+
+            if (Math.sqrt(x * x + y * y) < 0.18) {
+              tagData.el.setAttribute('animation__collectpos',
+                'property:position; to:0 0 0.19; dur:180; easing:easeOutCubic');
+              this.markTagComplete(tagData);
+              this.maybeFinishInteractive();
+              endDrag();
+            }
+          }.bind(this);
+
+          var endDrag = function () {
+            drag = null;
+            window.removeEventListener('pointermove', moveDrag);
+            window.removeEventListener('pointerup', endDrag);
+            window.removeEventListener('pointercancel', endDrag);
+          };
+
+          tagData.label.addEventListener('mousedown', startDrag);
+          this._interactionCleanups.push(function () {
+            tagData.label.removeEventListener('mousedown', startDrag);
+            endDrag();
+          });
+        }, this);
+      },
+      presentScratchFind: function (duration) {
+        this.reset();
+        if (!this._tags || !this._tags.length) {
+          this.completeAfter(duration);
+          return;
+        }
+
+        this.showStaticTags('0.98 0.98 0.98');
+        this._tags.forEach(function (tagData) {
+          if (tagData.label) {
+            tagData.label.setAttribute('hud-label', 'bg', 'rgba(177,18,27,0.82)');
+          }
+        });
+
+        var finish = function () {
+          if (!this._tags) return;
+          this._tags.forEach(function (tagData) {
+            this.markTagComplete(tagData);
+          }, this);
+          this.maybeFinishInteractive();
+        }.bind(this);
+
+        if (window.startScratchReveal) {
+          window.startScratchReveal({
+            scratchThreshold: 0.12,
+            scratchBrush: 96
+          }, finish);
+        } else {
+          this._completeTimer = setTimeout(finish, Math.max(1600, Number(duration || 3200)));
+        }
+      },
       startOrbit: function () {
         this._orbiting = true;
         this._startTime = null;
@@ -892,30 +1198,59 @@
           this._tags.forEach(function (tagData) {
             tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.16');
             tagData.el.setAttribute('scale', '0.96 0.96 0.96');
+            this.setTagDrift(tagData, true);
             tagData.el.setAttribute('animation__pulse',
               'property:scale; from:0.96 0.96 0.96; to:1.04 1.04 1.04; dir:alternate; dur:1500; loop:true; easing:easeInOutSine');
-          });
+          }, this);
         }
       },
       tick: function (time) {
-        if (!this._orbiting) return;
         if (!this._tags || !this._tags.length) return;
-        if (this._startTime === null) this._startTime = time;
+        var hasDrift = this._tags.some(function (tagData) { return tagData.driftActive; });
+        if (!this._orbiting && !hasDrift) return;
 
-        var spin = ((time - this._startTime) / this.data.speed) * Math.PI * 2;
-        var total = this._tags.length || 1;
+        if (this._orbiting) {
+          if (this._startTime === null) this._startTime = time;
+
+          var spin = ((time - this._startTime) / this.data.speed) * Math.PI * 2;
+          var total = this._tags.length || 1;
+
+          this._tags.forEach(function (tagData) {
+            var baseX = tagData.x;
+            var baseY = tagData.y;
+            if (this.data.layout && this.data.layout !== 'circle') {
+              if (tagData.driftActive) {
+                var layoutOffset = this.getDriftOffset(tagData, time);
+                baseX += layoutOffset.x;
+                baseY += layoutOffset.y;
+              }
+              tagData.el.setAttribute('position', baseX.toFixed(4) + ' ' + baseY.toFixed(4) + ' 0.16');
+              tagData.el.setAttribute('rotation', '0 0 0');
+              return;
+            }
+
+            var angle = tagData.angle + spin;
+            var pos = this.getTagPosition(angle, total, tagData.index);
+            baseX = pos.x;
+            baseY = pos.y;
+            if (tagData.driftActive) {
+              var orbitOffset = this.getDriftOffset(tagData, time);
+              baseX += orbitOffset.x * 0.55;
+              baseY += orbitOffset.y * 0.55;
+            }
+            tagData.el.setAttribute('position', baseX.toFixed(4) + ' ' + baseY.toFixed(4) + ' 0.16');
+            tagData.el.setAttribute('rotation', '0 0 0');
+          }, this);
+        }
+
+        if (this._orbiting) return;
 
         this._tags.forEach(function (tagData) {
-          if (this.data.layout && this.data.layout !== 'circle') {
-            tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.16');
-            tagData.el.setAttribute('rotation', '0 0 0');
-            return;
-          }
-
-          var angle = tagData.angle + spin;
-          var pos = this.getTagPosition(angle, total, tagData.index);
-          tagData.el.setAttribute('position', pos.x + ' ' + pos.y + ' 0.16');
-          tagData.el.setAttribute('rotation', '0 0 0');
+          if (!tagData.driftActive) return;
+          var offset = this.getDriftOffset(tagData, time);
+          var x = tagData.x + offset.x;
+          var y = tagData.y + offset.y;
+          tagData.el.setAttribute('position', x.toFixed(4) + ' ' + y.toFixed(4) + ' 0.17');
         }, this);
       }
     });
@@ -1003,6 +1338,14 @@
   </div>
 
   <div id="ar-dark-overlay" class="hidden"></div>
+
+  <div id="scratch-reveal" class="hidden" aria-hidden="true">
+    <canvas id="scratch-canvas"></canvas>
+    <div class="scratch-copy">
+      <strong>Raspe para revelar</strong>
+      <span>arraste o dedo pela tela</span>
+    </div>
+  </div>
 
   <!-- ====================================================
        MODAL DO VÍDEO

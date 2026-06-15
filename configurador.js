@@ -41,7 +41,10 @@ var WORD_ANIMATION_OPTIONS = [
   { value: 'wave', label: 'Onda magnetica' },
   { value: 'spiral', label: 'Espiral 3D' },
   { value: 'rain', label: 'Chuva neon' },
-  { value: 'constellation', label: 'Constelacao' }
+  { value: 'constellation', label: 'Constelacao' },
+  { value: 'clickCollect', label: 'Interativo: clicar em todas' },
+  { value: 'dragCenter', label: 'Interativo: arrastar para o centro' },
+  { value: 'scratchFind', label: 'Interativo: raspadinha das palavras' }
 ];
 
 var WORD_LAYOUT_OPTIONS = [
@@ -271,6 +274,17 @@ function selectHtml(field, label, value, options) {
   );
 }
 
+function pointCheckboxHtml(field, label, checked) {
+  return (
+    '<div class="field full">' +
+      '<label class="checkbox-option">' +
+        '<input type="checkbox" data-point-field="' + field + '"' + (checked ? ' checked' : '') + ' />' +
+        '<span>' + escapeHtml(label) + '</span>' +
+      '</label>' +
+    '</div>'
+  );
+}
+
 function getPointFeature(point) {
   return (point && (point.feature || point.type)) || 'info';
 }
@@ -376,6 +390,7 @@ function featureEditorHtml(point) {
           fieldHtml('carouselTitleFont', 'Tamanho da fonte do titulo', point.carouselTitleFont || 50, 'number') +
           fieldHtml('carouselRadius', 'Raio do carrossel', point.carouselRadius || 0.82, 'number', '0.01') +
           fieldHtml('carouselSpeed', 'Velocidade de giro', point.carouselSpeed || 18, 'number') +
+          pointCheckboxHtml('carouselFocusAnimation', 'Animacao destaque: gira rapido e da zoom no item', point.carouselFocusAnimation) +
           fieldHtml('carouselItemWidth', 'Largura dos cards', point.carouselItemWidth || 0.52, 'number', '0.01') +
           fieldHtml('carouselItemHeight', 'Altura dos cards', point.carouselItemHeight || 0.68, 'number', '0.01') +
           fieldHtml('carouselCardBg', 'Cor do fundo das imagens', point.carouselCardBg || '#ffffff', 'text') +
@@ -420,6 +435,8 @@ function featureEditorHtml(point) {
           textareaHtml('keywords', 'Palavras futuristas, uma por linha', (point.keywords || []).join('\n')) +
           selectHtml('wordAnimation', 'Animacao das palavras', point.wordAnimation || 'vortex', WORD_ANIMATION_OPTIONS) +
           selectHtml('wordLayout', 'Posicionamento das palavras', point.wordLayout || 'circle', WORD_LAYOUT_OPTIONS) +
+          pointCheckboxHtml('wordBackdropEffect', 'Fundo escuro clareando nas palavras', point.wordBackdropEffect) +
+          pointCheckboxHtml('wordFireflyEffect', 'Ambiente escuro com palavras vagalumes', point.wordFireflyEffect) +
           fieldHtml('video', 'Caminho do video', point.video || '', 'text') +
           uploadHtml('video-file', 'Enviar video desta ilha', point._videoFile) +
           fieldHtml('site', 'Link do site', point.site || '', 'text') +
@@ -443,6 +460,8 @@ function featureEditorHtml(point) {
         textareaHtml('keywords', 'Palavras futuristas, uma por linha', (point.keywords || []).join('\n')) +
         selectHtml('wordAnimation', 'Animacao das palavras', point.wordAnimation || 'vortex', WORD_ANIMATION_OPTIONS) +
         selectHtml('wordLayout', 'Posicionamento das palavras', point.wordLayout || 'circle', WORD_LAYOUT_OPTIONS) +
+        pointCheckboxHtml('wordBackdropEffect', 'Fundo escuro clareando nas palavras', point.wordBackdropEffect) +
+        pointCheckboxHtml('wordFireflyEffect', 'Ambiente escuro com palavras vagalumes', point.wordFireflyEffect) +
       '</div>' +
     '</section>'
   );
@@ -634,6 +653,8 @@ function stepEditorHtml(step, index) {
       stepTextareaHtml(index, 'words', 'Palavras, uma por linha', (step.words || []).join('\n')) +
       stepSelectHtml(index, 'animation', 'Animacao', step.animation || 'vortex', WORD_ANIMATION_OPTIONS) +
       stepSelectHtml(index, 'layout', 'Posicionamento', step.layout || 'circle', WORD_LAYOUT_OPTIONS) +
+      stepCheckboxHtml(index, 'backdropEffect', 'Ativar fundo escuro clareando', step.backdropEffect) +
+      stepCheckboxHtml(index, 'fireflyEffect', 'Ambiente escuro com palavras vagalumes', step.fireflyEffect) +
       stepFieldHtml(index, 'wordBg', 'Cor do fundo das palavras', step.wordBg || 'rgba(177,18,27,0.72)', 'text') +
       stepFieldHtml(index, 'wordColor', 'Cor das palavras', step.wordColor || '#ffffff', 'text') +
       stepFieldHtml(index, 'wordFont', 'Tamanho da fonte das palavras', valueOrDefault(step.wordFont, 56), 'number');
@@ -685,6 +706,12 @@ function stepEditorHtml(step, index) {
       stepFieldHtml(index, 'titleFont', 'Tamanho da fonte do titulo do carrossel', valueOrDefault(step.titleFont, 50), 'number') +
       stepFieldHtml(index, 'radius', 'Raio do carrossel', valueOrDefault(step.radius, 0.82), 'number', '0.01') +
       stepFieldHtml(index, 'speed', 'Velocidade de giro', valueOrDefault(step.speed, 18), 'number') +
+      stepCheckboxHtml(index, 'focusAnimation', 'Animacao destaque: gira rapido e da zoom no item', step.focusAnimation) +
+      stepFieldHtml(index, 'focusScale', 'Zoom do item em destaque', valueOrDefault(step.focusScale, 2.15), 'number', '0.01') +
+      stepFieldHtml(index, 'focusY', 'Altura do item em destaque', valueOrDefault(step.focusY, 0.04), 'number', '0.01') +
+      stepFieldHtml(index, 'focusZ', 'Distancia frontal do destaque', valueOrDefault(step.focusZ, 0.72), 'number', '0.01') +
+      stepFieldHtml(index, 'focusSpinDuration', 'Tempo do giro rapido', valueOrDefault(step.focusSpinDuration, 1200), 'number') +
+      stepFieldHtml(index, 'focusHoldDuration', 'Tempo parado no item', valueOrDefault(step.focusHoldDuration, 900), 'number') +
       stepFieldHtml(index, 'itemWidth', 'Largura dos cards', valueOrDefault(step.itemWidth, 0.52), 'number', '0.01') +
       stepFieldHtml(index, 'itemHeight', 'Altura dos cards', valueOrDefault(step.itemHeight, 0.68), 'number', '0.01') +
       stepFieldHtml(index, 'cardBg', 'Cor do fundo das imagens', step.cardBg || '#ffffff', 'text') +
@@ -714,6 +741,7 @@ function stepEditorHtml(step, index) {
       '</div>' +
       '<div class="editor-grid">' +
         stepSelectHtml(index, 'type', 'Funcionalidade', type, STEP_TYPE_OPTIONS) +
+        stepCheckboxHtml(index, 'scratchEffect', 'Raspadinha interativa antes do bloco', step.scratchEffect) +
         stepFieldHtml(index, 'stepTitle', 'Titulo do bloco', step.stepTitle || '', 'text') +
         stepFieldHtml(index, 'stepTitleBg', 'Cor do fundo do titulo do bloco', step.stepTitleBg || 'rgba(177,18,27,0.72)', 'text') +
         stepFieldHtml(index, 'stepTitleColor', 'Cor do titulo do bloco', step.stepTitleColor || '#ffffff', 'text') +
@@ -762,6 +790,17 @@ function stepSelectHtml(index, field, label, value, options) {
   );
 }
 
+function stepCheckboxHtml(index, field, label, checked) {
+  return (
+    '<div class="field full">' +
+      '<label class="checkbox-option">' +
+        '<input type="checkbox" data-step-index="' + index + '" data-step-field="' + field + '"' + (checked ? ' checked' : '') + ' />' +
+        '<span>' + escapeHtml(label) + '</span>' +
+      '</label>' +
+    '</div>'
+  );
+}
+
 function valueOrDefault(value, fallback) {
   return value === undefined || value === null || value === '' ? fallback : value;
 }
@@ -782,6 +821,7 @@ function defaultStep(type, order) {
       type: 'logoText',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 1600,
       text: '',
@@ -798,6 +838,7 @@ function defaultStep(type, order) {
       type: 'scanner',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 4200,
       introTop: '',
@@ -812,11 +853,14 @@ function defaultStep(type, order) {
       type: 'words',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 11200,
       words: [],
       animation: 'vortex',
-      layout: 'circle'
+      layout: 'circle',
+      backdropEffect: false,
+      fireflyEffect: false
     };
   }
 
@@ -825,6 +869,7 @@ function defaultStep(type, order) {
       type: 'phrase',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 1800,
       text: '',
@@ -839,6 +884,7 @@ function defaultStep(type, order) {
       type: 'actions',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       actions: ['collection', 'video', 'site'],
@@ -851,6 +897,7 @@ function defaultStep(type, order) {
       type: 'image',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       image: '',
@@ -875,6 +922,7 @@ function defaultStep(type, order) {
       type: 'carousel3d',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       title: '',
@@ -883,6 +931,12 @@ function defaultStep(type, order) {
       titleFont: 50,
       radius: 0.82,
       speed: 18,
+      focusAnimation: false,
+      focusScale: 2.15,
+      focusY: 0.04,
+      focusZ: 0.72,
+      focusSpinDuration: 1200,
+      focusHoldDuration: 900,
       itemWidth: 0.52,
       itemHeight: 0.68,
       cardBg: '#ffffff',
@@ -899,6 +953,7 @@ function defaultStep(type, order) {
       type: 'collection',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       cta: '',
@@ -911,6 +966,7 @@ function defaultStep(type, order) {
       type: 'video',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       cta: '',
@@ -923,6 +979,7 @@ function defaultStep(type, order) {
       type: 'site',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       cta: '',
@@ -935,6 +992,7 @@ function defaultStep(type, order) {
       type: 'model3d',
       order: order,
       stepTitle: '',
+      scratchEffect: false,
       delay: 0,
       duration: 0,
       model: '',
@@ -947,6 +1005,7 @@ function defaultStep(type, order) {
     type: type || 'collection',
     order: order,
     stepTitle: '',
+    scratchEffect: false,
     delay: 0,
     duration: 0,
     cta: ''
@@ -974,7 +1033,9 @@ function legacyStepsFromPoint(point) {
         duration: 11200,
         words: Array.isArray(point.keywords) ? point.keywords : [],
         animation: point.wordAnimation || 'vortex',
-        layout: point.wordLayout || 'circle'
+        layout: point.wordLayout || 'circle',
+        backdropEffect: !!point.wordBackdropEffect,
+        fireflyEffect: !!point.wordFireflyEffect
       },
       {
         type: 'actions',
@@ -1006,7 +1067,9 @@ function legacyStepsFromPoint(point) {
         duration: 11200,
         words: Array.isArray(point.keywords) ? point.keywords : [],
         animation: point.wordAnimation || 'vortex',
-        layout: point.wordLayout || 'circle'
+        layout: point.wordLayout || 'circle',
+        backdropEffect: !!point.wordBackdropEffect,
+        fireflyEffect: !!point.wordFireflyEffect
       },
       {
         type: 'phrase',
@@ -1073,6 +1136,7 @@ function legacyStepsFromPoint(point) {
         titleFont: Number(point.carouselTitleFont || 50),
         radius: Number(point.carouselRadius || 0.82),
         speed: Number(point.carouselSpeed || 18),
+        focusAnimation: !!point.carouselFocusAnimation,
         itemWidth: Number(point.carouselItemWidth || 0.52),
         itemHeight: Number(point.carouselItemHeight || 0.68),
         cardBg: point.carouselCardBg || '#ffffff',
@@ -1159,10 +1223,13 @@ function normalizeStepsForEditor(steps) {
       clean.order = Number(clean.order || index + 1);
       clean.delay = Number(clean.delay || 0);
       clean.duration = Number(valueOrDefault(clean.duration, defaultDurationForStep(clean.type)));
+      clean.scratchEffect = clean.scratchEffect === true || clean.scratchEffect === 'true' || clean.scratchEffect === 1 || clean.scratchEffect === '1';
       if (clean.type === 'words') {
         clean.words = Array.isArray(clean.words) ? clean.words : String(clean.words || '').split(/\n|,/).map(function (word) {
           return word.trim();
         }).filter(Boolean);
+        clean.backdropEffect = clean.backdropEffect === true || clean.backdropEffect === 'true' || clean.backdropEffect === 1 || clean.backdropEffect === '1';
+        clean.fireflyEffect = clean.fireflyEffect === true || clean.fireflyEffect === 'true' || clean.fireflyEffect === 1 || clean.fireflyEffect === '1';
       }
       if (clean.type === 'actions') {
         clean.actions = Array.isArray(clean.actions) ? clean.actions : String(clean.actions || '').split(/\n|,/).map(function (action) {
@@ -1172,6 +1239,9 @@ function normalizeStepsForEditor(steps) {
       if (clean.type === 'collection' || clean.type === 'carousel3d') {
         clean.items = normalizeCollectionForEditor(clean.items || []);
       }
+      if (clean.type === 'carousel3d') {
+        clean.focusAnimation = clean.focusAnimation === true || clean.focusAnimation === 'true' || clean.focusAnimation === 1 || clean.focusAnimation === '1';
+      }
       return clean;
     })
     .sort(function (a, b) { return a.order - b.order; });
@@ -1179,7 +1249,7 @@ function normalizeStepsForEditor(steps) {
 
 function bindEditorEvents(point) {
   document.querySelectorAll('[data-point-field]').forEach(function (input) {
-    var eventName = input.tagName === 'SELECT' ? 'change' : 'input';
+    var eventName = input.tagName === 'SELECT' || input.type === 'checkbox' ? 'change' : 'input';
     input.addEventListener(eventName, function () {
       var field = input.getAttribute('data-point-field');
       var previousFeature = getPointFeature(point);
@@ -1193,7 +1263,9 @@ function bindEditorEvents(point) {
         return;
       }
 
-      if (field === 'keywords') {
+      if (input.type === 'checkbox') {
+        point[field] = input.checked;
+      } else if (field === 'keywords') {
         point.keywords = input.value.split(/\n|,/).map(function (word) { return word.trim(); }).filter(Boolean);
       } else if (
         field === 'targetIndex' ||
@@ -1237,7 +1309,7 @@ function bindEditorEvents(point) {
   });
 
   document.querySelectorAll('[data-step-field]').forEach(function (input) {
-    var eventName = input.tagName === 'SELECT' ? 'change' : 'input';
+    var eventName = input.tagName === 'SELECT' || input.type === 'checkbox' ? 'change' : 'input';
     input.addEventListener(eventName, function () {
       var stepIndex = Number(input.getAttribute('data-step-index'));
       point.steps = normalizeStepsForEditor(point.steps || []);
@@ -1251,7 +1323,9 @@ function bindEditorEvents(point) {
         return;
       }
 
-      if (field === 'words') {
+      if (input.type === 'checkbox') {
+        step[field] = input.checked;
+      } else if (field === 'words') {
         step.words = input.value.split(/\n|,/).map(function (word) { return word.trim(); }).filter(Boolean);
       } else if (field === 'actions') {
         step.actions = input.value.split(/\n|,/).map(function (action) { return action.trim(); }).filter(Boolean);
@@ -1277,6 +1351,11 @@ function bindEditorEvents(point) {
         field === 'itemWidth' ||
         field === 'itemHeight' ||
         field === 'modelSize' ||
+        field === 'focusScale' ||
+        field === 'focusY' ||
+        field === 'focusZ' ||
+        field === 'focusSpinDuration' ||
+        field === 'focusHoldDuration' ||
         field === 'spinSpeed'
       ) {
         step[field] = Number(input.value || 0);
@@ -1802,6 +1881,8 @@ function normalizePointForSave(point) {
     clean.keywords = Array.isArray(point.keywords) ? point.keywords : [];
     clean.wordAnimation = point.wordAnimation || 'vortex';
     clean.wordLayout = point.wordLayout || 'circle';
+    clean.wordBackdropEffect = !!point.wordBackdropEffect;
+    clean.wordFireflyEffect = !!point.wordFireflyEffect;
     if (feature === 'menu') {
       clean.video = point.video || '';
       clean.site = point.site || '';
@@ -1835,6 +1916,7 @@ function normalizePointForSave(point) {
     clean.carouselTitleFont = Number(point.carouselTitleFont || 50);
     clean.carouselRadius = Number(point.carouselRadius || 0.82);
     clean.carouselSpeed = Number(point.carouselSpeed || 18);
+    clean.carouselFocusAnimation = !!point.carouselFocusAnimation;
     clean.carouselItemWidth = Number(point.carouselItemWidth || 0.52);
     clean.carouselItemHeight = Number(point.carouselItemHeight || 0.68);
     clean.carouselCardBg = point.carouselCardBg || '#ffffff';
@@ -1863,6 +1945,7 @@ function normalizeStepsForSave(steps) {
       stepTitleBg: step.stepTitleBg || 'rgba(177,18,27,0.72)',
       stepTitleColor: step.stepTitleColor || '#ffffff',
       stepTitleFont: Number(valueOrDefault(step.stepTitleFont, 64)),
+      scratchEffect: !!step.scratchEffect,
       delay: Number(step.delay || 0),
       duration: Number(valueOrDefault(step.duration, defaultDurationForStep(type)))
     };
@@ -1885,6 +1968,8 @@ function normalizeStepsForSave(steps) {
       clean.words = Array.isArray(step.words) ? step.words : [];
       clean.animation = step.animation || 'vortex';
       clean.layout = step.layout || 'circle';
+      clean.backdropEffect = !!step.backdropEffect;
+      clean.fireflyEffect = !!step.fireflyEffect;
       clean.wordBg = step.wordBg || 'rgba(177,18,27,0.72)';
       clean.wordColor = step.wordColor || '#ffffff';
       clean.wordFont = Number(valueOrDefault(step.wordFont, 56));
@@ -1927,6 +2012,12 @@ function normalizeStepsForSave(steps) {
       clean.titleFont = Number(valueOrDefault(step.titleFont, 50));
       clean.radius = Number(valueOrDefault(step.radius, 0.82));
       clean.speed = Number(valueOrDefault(step.speed, 18));
+      clean.focusAnimation = !!step.focusAnimation;
+      clean.focusScale = Number(valueOrDefault(step.focusScale, 2.15));
+      clean.focusY = Number(valueOrDefault(step.focusY, 0.04));
+      clean.focusZ = Number(valueOrDefault(step.focusZ, 0.72));
+      clean.focusSpinDuration = Number(valueOrDefault(step.focusSpinDuration, 1200));
+      clean.focusHoldDuration = Number(valueOrDefault(step.focusHoldDuration, 900));
       clean.itemWidth = Number(valueOrDefault(step.itemWidth, 0.52));
       clean.itemHeight = Number(valueOrDefault(step.itemHeight, 0.68));
       clean.cardBg = step.cardBg || '#ffffff';
