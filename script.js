@@ -275,12 +275,14 @@ function cancelScratchReveal() {
 
   state.overlay.classList.add('hidden');
   state.overlay.setAttribute('aria-hidden', 'true');
+  if (state.handHint) state.handHint.classList.add('is-hidden');
   state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
 }
 
 function startScratchReveal(options, done) {
   var overlay = document.getElementById('scratch-reveal');
   var canvas = document.getElementById('scratch-canvas');
+  var handHint = document.getElementById('scratch-hand-hint');
   if (!overlay || !canvas) {
     done();
     return;
@@ -297,6 +299,10 @@ function startScratchReveal(options, done) {
   var drawing = false;
   var last = null;
   var checkCount = 0;
+
+  function hideHandHint() {
+    if (handHint) handHint.classList.add('is-hidden');
+  }
 
   function resize() {
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -399,6 +405,7 @@ function startScratchReveal(options, done) {
 
   function pointerDown(event) {
     event.preventDefault();
+    hideHandHint();
     drawing = true;
     last = null;
     canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
@@ -423,6 +430,7 @@ function startScratchReveal(options, done) {
   scratchRevealState = {
     overlay: overlay,
     canvas: canvas,
+    handHint: handHint,
     ctx: ctx,
     resize: resize,
     pointerDown: pointerDown,
@@ -431,6 +439,7 @@ function startScratchReveal(options, done) {
   };
 
   resize();
+  if (handHint) handHint.classList.remove('is-hidden');
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
   canvas.addEventListener('pointerdown', pointerDown);
