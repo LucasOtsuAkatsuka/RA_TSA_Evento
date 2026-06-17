@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Teste de Targets</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-card">
+      <strong>Teste rapido de deteccao</strong>
+      <span id="status-text">Aponte a camera para um dos 4 image targets.</span>
+    </div>
+  </div>
+
+  <a-scene
+    id="ar-scene"
+    mindar-image="imageTargetSrc: ../targets/targets.mind; autoStart: false; uiScanning: false; uiLoading: false; uiError: false; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 20;"
+    embedded
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: false; alpha: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+  >
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-text
+        value="1 detectado"
+        position="0 0.3 0"
+        align="center"
+        color="#ffffff"
+        width="1.6"
+        scale="1.2 1.2 1.2"
+      ></a-text>
+    </a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 1">
+      <a-text
+        value="2 detectado"
+        position="0 0.3 0"
+        align="center"
+        color="#ffffff"
+        width="1.6"
+        scale="1.2 1.2 1.2"
+      ></a-text>
+    </a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 2">
+      <a-text
+        value="3 detectado"
+        position="0 0.3 0"
+        align="center"
+        color="#ffffff"
+        width="1.6"
+        scale="1.2 1.2 1.2"
+      ></a-text>
+    </a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 3">
+      <a-text
+        value="4 detectado"
+        position="0 0.3 0"
+        align="center"
+        color="#ffffff"
+        width="1.6"
+        scale="1.2 1.2 1.2"
+      ></a-text>
+    </a-entity>
+  </a-scene>
+
+  <script src="./script.js"></script>
+</body>
+</html>

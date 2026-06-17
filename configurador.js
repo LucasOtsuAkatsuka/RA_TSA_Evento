@@ -16,6 +16,7 @@ var FEATURE_OPTIONS = [
   { value: 'video', label: 'Video' },
   { value: 'site', label: 'Link externo' },
   { value: 'image', label: 'Imagem interativa' },
+  { value: 'videoPlayer', label: 'Video na AR' },
   { value: 'collection', label: 'Galeria de imagens' },
   { value: 'carousel3d', label: 'Carrossel 3D' },
   { value: 'model3d', label: 'Modelo 3D direto' }
@@ -31,6 +32,7 @@ var STEP_TYPE_OPTIONS = [
   { value: 'video', label: 'Icone Video' },
   { value: 'site', label: 'Icone Site' },
   { value: 'image', label: 'Imagem' },
+  { value: 'videoPlayer', label: 'Video na AR' },
   { value: 'carousel3d', label: 'Carrossel 3D' },
   { value: 'model3d', label: 'Modelo 3D' }
 ];
@@ -360,6 +362,31 @@ function featureEditorHtml(point) {
           fieldHtml('imageSpinSpeed', 'Velocidade do giro', point.imageSpinSpeed || 42, 'number') +
           fieldHtml('imageFloatAmount', 'Intensidade da flutuacao', point.imageFloatAmount || 0.06, 'number', '0.01') +
           checkboxGroupHtml('imageInteractions', 'Interacoes da imagem', point.imageInteractions || ['float'], IMAGE_INTERACTION_OPTIONS) +
+        '</div>' +
+      '</section>'
+    );
+  }
+
+  if (feature === 'videoPlayer') {
+    return (
+      '<section class="feature-card">' +
+        '<h2>Funcionalidade: Video na AR</h2>' +
+        '<div class="editor-grid">' +
+          fieldHtml('video', 'Caminho do video', point.video || '', 'text') +
+          uploadHtml('video-file', 'Enviar video desta ilha', point._videoFile) +
+          fieldHtml('videoTitle', 'Titulo do video', point.videoTitle || '', 'text') +
+          fieldHtml('videoWidth', 'Largura do video', point.videoWidth || 0.82, 'number', '0.01') +
+          fieldHtml('videoHeight', 'Altura do video', point.videoHeight || 0.56, 'number', '0.01') +
+          fieldHtml('videoX', 'Posicao X', point.videoX || 0, 'number', '0.01') +
+          fieldHtml('videoY', 'Posicao Y', point.videoY || 0.05, 'number', '0.01') +
+          fieldHtml('videoZ', 'Posicao Z', point.videoZ || 0.28, 'number', '0.01') +
+          fieldHtml('videoBg', 'Cor do fundo do video', point.videoBg || '#000000', 'text') +
+          fieldHtml('videoTitleBg', 'Cor do fundo do titulo', point.videoTitleBg || 'rgba(177,18,27,0.72)', 'text') +
+          fieldHtml('videoTitleColor', 'Cor do titulo', point.videoTitleColor || '#ffffff', 'text') +
+          fieldHtml('videoTitleFont', 'Fonte do titulo', point.videoTitleFont || 38, 'number') +
+          fieldHtml('videoFloatAmount', 'Intensidade da flutuacao', point.videoFloatAmount || 0.04, 'number', '0.01') +
+          pointCheckboxHtml('videoMuted', 'Video sem som', point.videoMuted !== false) +
+          pointCheckboxHtml('videoLoop', 'Repetir video', point.videoLoop !== false) +
         '</div>' +
       '</section>'
     );
@@ -697,6 +724,23 @@ function stepEditorHtml(step, index) {
       stepFieldHtml(index, 'spinSpeed', 'Velocidade do giro', valueOrDefault(step.spinSpeed, 42), 'number') +
       stepFieldHtml(index, 'floatAmount', 'Intensidade da flutuacao', valueOrDefault(step.floatAmount, 0.06), 'number', '0.01') +
       stepCheckboxGroupHtml(index, 'interactions', 'Interacoes da imagem', step.interactions || ['float'], IMAGE_INTERACTION_OPTIONS);
+  } else if (type === 'videoPlayer') {
+    details =
+      stepFieldHtml(index, 'video', 'Caminho do video', step.video || '', 'text') +
+      stepUploadHtml(index, 'video', 'Enviar video deste bloco', step._videoFile, 'video/*') +
+      stepFieldHtml(index, 'title', 'Titulo do video', step.title || '', 'text') +
+      stepFieldHtml(index, 'width', 'Largura do video', valueOrDefault(step.width, 0.82), 'number', '0.01') +
+      stepFieldHtml(index, 'height', 'Altura do video', valueOrDefault(step.height, 0.56), 'number', '0.01') +
+      stepFieldHtml(index, 'x', 'Posicao X', valueOrDefault(step.x, 0), 'number', '0.01') +
+      stepFieldHtml(index, 'y', 'Posicao Y', valueOrDefault(step.y, 0.05), 'number', '0.01') +
+      stepFieldHtml(index, 'z', 'Posicao Z', valueOrDefault(step.z, 0.28), 'number', '0.01') +
+      stepFieldHtml(index, 'bg', 'Cor do fundo do video', step.bg || '#000000', 'text') +
+      stepFieldHtml(index, 'titleBg', 'Cor do fundo do titulo', step.titleBg || 'rgba(177,18,27,0.72)', 'text') +
+      stepFieldHtml(index, 'titleColor', 'Cor do titulo', step.titleColor || '#ffffff', 'text') +
+      stepFieldHtml(index, 'titleFont', 'Fonte do titulo', valueOrDefault(step.titleFont, 38), 'number') +
+      stepFieldHtml(index, 'floatAmount', 'Intensidade da flutuacao', valueOrDefault(step.floatAmount, 0.04), 'number', '0.01') +
+      stepCheckboxHtml(index, 'muted', 'Video sem som', step.muted !== false) +
+      stepCheckboxHtml(index, 'loop', 'Repetir video', step.loop !== false);
   } else if (type === 'carousel3d') {
     step.items = Array.isArray(step.items) ? step.items : [];
     details =
@@ -812,6 +856,7 @@ function defaultDurationForStep(type) {
   if (type === 'phrase') return 1800;
   if (type === 'carousel3d') return 0;
   if (type === 'image') return 0;
+  if (type === 'videoPlayer') return 0;
   return 0;
 }
 
@@ -914,6 +959,31 @@ function defaultStep(type, order) {
       interactions: ['float'],
       spinSpeed: 42,
       floatAmount: 0.06
+    };
+  }
+
+  if (type === 'videoPlayer') {
+    return {
+      type: 'videoPlayer',
+      order: order,
+      stepTitle: '',
+      scratchEffect: false,
+      delay: 0,
+      duration: 0,
+      video: '',
+      title: '',
+      width: 0.82,
+      height: 0.56,
+      x: 0,
+      y: 0.05,
+      z: 0.28,
+      bg: '#000000',
+      titleBg: 'rgba(177,18,27,0.72)',
+      titleColor: '#ffffff',
+      titleFont: 38,
+      floatAmount: 0.04,
+      muted: true,
+      loop: true
     };
   }
 
@@ -1119,6 +1189,31 @@ function legacyStepsFromPoint(point) {
         interactions: Array.isArray(point.imageInteractions) ? point.imageInteractions : ['float'],
         spinSpeed: Number(point.imageSpinSpeed || 42),
         floatAmount: Number(point.imageFloatAmount || 0.06)
+      }
+    ];
+  }
+
+  if (feature === 'videoPlayer') {
+    return [
+      {
+        type: 'videoPlayer',
+        order: 1,
+        delay: 0,
+        duration: Number(point.videoDuration || 0),
+        video: point.video || '',
+        title: point.videoTitle || '',
+        width: Number(point.videoWidth || 0.82),
+        height: Number(point.videoHeight || 0.56),
+        x: Number(point.videoX || 0),
+        y: Number(point.videoY || 0.05),
+        z: Number(point.videoZ || 0.28),
+        bg: point.videoBg || '#000000',
+        titleBg: point.videoTitleBg || 'rgba(177,18,27,0.72)',
+        titleColor: point.videoTitleColor || '#ffffff',
+        titleFont: Number(point.videoTitleFont || 38),
+        floatAmount: Number(point.videoFloatAmount || 0.04),
+        muted: point.videoMuted !== false,
+        loop: point.videoLoop !== false
       }
     ];
   }
@@ -1702,7 +1797,7 @@ async function persistUploads() {
 
     var feature = getPointFeature(point);
 
-    if ((feature === 'video' || feature === 'menu' || feature === 'custom') && point._videoFile) {
+    if ((feature === 'video' || feature === 'videoPlayer' || feature === 'menu' || feature === 'custom') && point._videoFile) {
       point.video = await writeUploadedFile(point._videoFile, ['videos', panelSlug], 'video-' + pointSlug);
       point._videoFile = null;
     }
@@ -1890,6 +1985,21 @@ function normalizePointForSave(point) {
     }
   } else if (feature === 'video') {
     clean.video = point.video || '';
+  } else if (feature === 'videoPlayer') {
+    clean.video = point.video || '';
+    clean.videoTitle = point.videoTitle || '';
+    clean.videoWidth = Number(point.videoWidth || 0.82);
+    clean.videoHeight = Number(point.videoHeight || 0.56);
+    clean.videoX = Number(point.videoX || 0);
+    clean.videoY = Number(point.videoY || 0.05);
+    clean.videoZ = Number(point.videoZ || 0.28);
+    clean.videoBg = point.videoBg || '#000000';
+    clean.videoTitleBg = point.videoTitleBg || 'rgba(177,18,27,0.72)';
+    clean.videoTitleColor = point.videoTitleColor || '#ffffff';
+    clean.videoTitleFont = Number(point.videoTitleFont || 38);
+    clean.videoFloatAmount = Number(point.videoFloatAmount || 0.04);
+    clean.videoMuted = point.videoMuted !== false;
+    clean.videoLoop = point.videoLoop !== false;
   } else if (feature === 'site') {
     clean.site = point.site || '';
   } else if (feature === 'image') {
@@ -2005,6 +2115,21 @@ function normalizeStepsForSave(steps) {
       clean.interactions = Array.isArray(step.interactions) ? step.interactions : ['float'];
       clean.spinSpeed = Number(valueOrDefault(step.spinSpeed, 42));
       clean.floatAmount = Number(valueOrDefault(step.floatAmount, 0.06));
+    } else if (type === 'videoPlayer') {
+      clean.video = step.video || '';
+      clean.title = step.title || '';
+      clean.width = Number(valueOrDefault(step.width, 0.82));
+      clean.height = Number(valueOrDefault(step.height, 0.56));
+      clean.x = Number(valueOrDefault(step.x, 0));
+      clean.y = Number(valueOrDefault(step.y, 0.05));
+      clean.z = Number(valueOrDefault(step.z, 0.28));
+      clean.bg = step.bg || '#000000';
+      clean.titleBg = step.titleBg || 'rgba(177,18,27,0.72)';
+      clean.titleColor = step.titleColor || '#ffffff';
+      clean.titleFont = Number(valueOrDefault(step.titleFont, 38));
+      clean.floatAmount = Number(valueOrDefault(step.floatAmount, 0.04));
+      clean.muted = step.muted !== false;
+      clean.loop = step.loop !== false;
     } else if (type === 'carousel3d') {
       clean.title = step.title || '';
       clean.titleBg = step.titleBg || 'rgba(177,18,27,0.72)';

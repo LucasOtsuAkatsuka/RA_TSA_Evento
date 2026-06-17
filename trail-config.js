@@ -36,7 +36,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 100,
-          "duration": 20000,
+          "duration": 14000,
           "words": [
             "Ecossistema",
             "Tecnologia",
@@ -51,7 +51,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -60,24 +60,49 @@ window.TRAIL_CONFIG = {
           "scratchEffect": true,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/painel-01/image-1-grupo-tsa-3-image.png",
           "title": "",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "radius": 0.3,
+          "speed": 25,
+          "focusAnimation": false,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "TSA",
+              "title": "TSA",
+              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-1-tsa.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "TSA Digital",
+              "title": "TSA Digital",
+              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-2-tsa-digital.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Lynx Process",
+              "title": "Lynx Process",
+              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-3-lynx-process.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -85,7 +110,29 @@ window.TRAIL_CONFIG = {
       "model": "assets/models/painel-01/model-1-grupo-tsa-3-model3d.glb",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 30,
-      "collection": []
+      "collection": [
+        {
+          "name": "TSA",
+          "title": "TSA",
+          "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-1-tsa.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "TSA Digital",
+          "title": "TSA Digital",
+          "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-2-tsa-digital.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Lynx Process",
+          "title": "Lynx Process",
+          "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-3-lynx-process.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 1,
@@ -138,7 +185,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "model3d",
+          "type": "videoPlayer",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -147,9 +194,20 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "model": "assets/models/painel-01/model-2-marca-02-3-model3d.glb",
-          "modelScale": "0.05,0.05,0.05",
-          "spinSpeed": 45
+          "video": "videos/painel-01/video-2-marca-02-3-videoplayer.mp4",
+          "title": "",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#000000",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "floatAmount": 0.04,
+          "muted": true,
+          "loop": true
         }
       ],
       "video": "",
@@ -424,6 +482,7 @@ window.TRAIL_CONFIG = {
           "titleFont": 38,
           "interactions": [
             "float",
+            "pulse",
             "glow"
           ],
           "spinSpeed": 42,
@@ -497,7 +556,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/digital/image-1-nova-ilha-2-image.png",
+          "image": "assets/images/digital/image-1-nova-ilha-3-image.png",
           "title": "",
           "width": 0.82,
           "height": 0.56,
@@ -584,7 +643,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/lynx/image-1-nova-ilha-2-image.png",
+          "image": "assets/images/lynx/image-1-nova-ilha-3-image.png",
           "title": "Modelos de posts 2 (3D)",
           "width": 0.82,
           "height": 0.56,
@@ -849,7 +908,7 @@ window.TRAIL_CONFIG = {
         {
           "type": "words",
           "order": 2,
-          "stepTitle": "",
+          "stepTitle": "DESAFIO",
           "stepTitleBg": "rgba(177,18,27,0.72)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,

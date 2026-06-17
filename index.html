@@ -592,6 +592,9 @@
         this._completedWords = 0;
         this._completeEl = null;
         this._dropZoneEl = null;
+        this._hintEl = null;
+        this._introOverlay = null;
+        this._completeOverlay = null;
         this._startTime = null;
         this._orbiting = false;
         this._completeTimer = null;
@@ -670,10 +673,13 @@
         }
 
         var layout = this.data.layout || 'circle';
+        var isPortrait = window.innerHeight > window.innerWidth;
+        var portraitTightenX = isPortrait ? 0.78 : 1;
+        var portraitTightenY = isPortrait ? 0.88 : 1;
         if (layout === 'row') {
           var rowSpan = Math.min(1.72, Math.max(0.74, (total - 1) * 0.86));
           return {
-            x: -rowSpan / 2 + (rowSpan * index) / Math.max(total - 1, 1),
+            x: (-rowSpan / 2 + (rowSpan * index) / Math.max(total - 1, 1)) * portraitTightenX,
             y: 0
           };
         }
@@ -682,7 +688,7 @@
           var columnSpan = Math.min(1.12, Math.max(0.42, (total - 1) * 0.34));
           return {
             x: 0,
-            y: columnSpan / 2 - (columnSpan * index) / Math.max(total - 1, 1)
+            y: (columnSpan / 2 - (columnSpan * index) / Math.max(total - 1, 1)) * portraitTightenY
           };
         }
 
@@ -691,8 +697,8 @@
           var diagonalSpanY = Math.min(0.92, Math.max(0.36, (total - 1) * 0.28));
           var progress = index / Math.max(total - 1, 1);
           return {
-            x: -diagonalSpanX / 2 + diagonalSpanX * progress,
-            y: diagonalSpanY / 2 - diagonalSpanY * progress
+            x: (-diagonalSpanX / 2 + diagonalSpanX * progress) * portraitTightenX,
+            y: (diagonalSpanY / 2 - diagonalSpanY * progress) * portraitTightenY
           };
         }
 
@@ -704,15 +710,18 @@
           var spacingX = cols <= 2 ? 0.78 : 0.62;
           var spacingY = rows <= 2 ? 0.34 : 0.3;
           return {
-            x: (col - (cols - 1) / 2) * spacingX,
-            y: ((rows - 1) / 2 - row) * spacingY
+            x: (col - (cols - 1) / 2) * spacingX * portraitTightenX,
+            y: ((rows - 1) / 2 - row) * spacingY * portraitTightenY
           };
         }
 
+        var portraitTighten = isPortrait ? 0.78 : 1;
         var radiusFactor = total <= 3 ? 0.72 : (total <= 4 ? 0.76 : (total === 5 ? 0.84 : 0.9));
         var horizontalInset = total <= 3 ? 0.74 : (total <= 4 ? 0.68 : 0.72);
         var verticalInset = total <= 3 ? 0.74 : (total <= 4 ? 0.62 : 0.68);
-        var effectiveRadius = this.data.radius * radiusFactor;
+        horizontalInset *= isPortrait ? 0.82 : 1;
+        verticalInset *= isPortrait ? 0.9 : 1;
+        var effectiveRadius = this.data.radius * radiusFactor * portraitTighten;
 
         return {
           x: Math.cos(angle) * effectiveRadius * horizontalInset,
@@ -753,6 +762,7 @@
           tagData.el.removeAttribute('animation__pulse');
           tagData.el.removeAttribute('animation__collectscale');
           tagData.el.removeAttribute('animation__collectpos');
+          tagData.el.removeAttribute('animation__winpulse');
           tagData.el.setAttribute('position', '0 0 0.17');
           tagData.el.setAttribute('rotation', '0 0 0');
           tagData.el.setAttribute('scale', '0.001 0.001 0.001');
@@ -780,6 +790,12 @@
           this._dropZoneEl.parentNode.removeChild(this._dropZoneEl);
         }
         this._dropZoneEl = null;
+        if (this._hintEl && this._hintEl.parentNode) {
+          this._hintEl.parentNode.removeChild(this._hintEl);
+        }
+        this._hintEl = null;
+        this.hideMiniGameIntro();
+        this.hideMiniGameComplete();
       },
       clearDriftTimers: function () {
         if (!this._driftTimers) this._driftTimers = [];
@@ -860,24 +876,22 @@
         this.clearDriftTimers();
         this._orbiting = false;
         if (window.cancelScratchReveal) window.cancelScratchReveal();
-
-        if (!this._completeEl) {
-          this._completeEl = document.createElement('a-entity');
-          this._completeEl.setAttribute('hud-label',
-            'text:CONCLUIDO; width:1.1; height:0.24; bg:rgba(34,197,94,0.86); color:#ffffff; font:58; variant:glass');
-          this._completeEl.setAttribute('position', '0 0 0.32');
-          this._completeEl.setAttribute('scale', '0.001 0.001 0.001');
-          this.el.appendChild(this._completeEl);
+        if (this._hintEl) {
+          this._hintEl.setAttribute('visible', false);
         }
 
-        this._completeEl.setAttribute('animation__done',
-          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:360; easing:easeOutBack');
+        if (this._tags) {
+          this._tags.forEach(function (tagData, i) {
+            tagData.el.setAttribute('animation__winpulse',
+              'property:scale; from:1 1 1; to:1.16 1.16 1.16; dir:alternate; dur:260; delay:' + (i * 80) +
+              '; loop:4; easing:easeInOutSine');
+          });
+        }
 
-        if (this._completeTimer) clearTimeout(this._completeTimer);
-        this._completeTimer = setTimeout(function () {
+        this.showMiniGameComplete(function () {
           this.el.setAttribute('visible', false);
           this.el.emit('word-sequence-complete');
-        }.bind(this), 950);
+        }.bind(this));
       },
       showDropZone: function () {
         if (this._dropZoneEl) return;
@@ -892,6 +906,86 @@
           'property:scale; from:0.9 0.9 0.9; to:1.12 1.12 1.12; dir:alternate; dur:780; loop:true; easing:easeInOutSine');
         this.el.appendChild(zone);
         this._dropZoneEl = zone;
+      },
+      showInteractionHint: function (text) {
+        if (!text) return;
+        if (this._hintEl && this._hintEl.parentNode) {
+          this._hintEl.parentNode.removeChild(this._hintEl);
+        }
+
+        var hint = document.createElement('a-entity');
+        hint.setAttribute('hud-label',
+          'text:' + text + '; width:1.55; height:0.18; bg:rgba(0,0,0,0.68); color:#ffffff; font:34; variant:glass');
+        hint.setAttribute('position', '0 0.72 0.26');
+        hint.setAttribute('scale', '0.001 0.001 0.001');
+        hint.setAttribute('animation__hintin',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:320; easing:easeOutBack');
+        hint.setAttribute('animation__hintfloat',
+          'property:object3D.position.y; from:0.72; to:0.76; dir:alternate; dur:1300; loop:true; easing:easeInOutSine');
+        this.el.appendChild(hint);
+        this._hintEl = hint;
+      },
+      showMiniGameIntro: function (config, start) {
+        var component = this;
+        var overlay = document.getElementById('mini-game-instructions');
+        var titleEl = document.getElementById('mini-game-title');
+        var textEl = document.getElementById('mini-game-text');
+        var stepLabelEl = document.getElementById('mini-game-step-label');
+        var stepsEl = document.getElementById('mini-game-steps');
+        var btnEl = document.getElementById('mini-game-start-btn');
+
+        if (!overlay || !btnEl) {
+          start.call(component);
+          return;
+        }
+
+        var steps = config.steps || [];
+        if (titleEl) titleEl.textContent = config.title || 'Mini jogo';
+        if (textEl) textEl.textContent = config.text || 'Complete a interação para avançar.';
+        if (stepLabelEl) stepLabelEl.textContent = config.label || 'Desafio';
+        if (stepsEl) {
+          stepsEl.innerHTML = steps.map(function (step, index) {
+            return '<div class="mini-game-step"><strong>' + (index + 1) + '</strong><span>' + step + '</span></div>';
+          }).join('');
+        }
+
+        var onStart = function () {
+          btnEl.removeEventListener('click', onStart);
+          overlay.classList.add('hidden');
+          start.call(component);
+        };
+
+        btnEl.textContent = config.button || 'Começar';
+        btnEl.addEventListener('click', onStart);
+        overlay.classList.remove('hidden');
+        this._introOverlay = { overlay: overlay, button: btnEl, onStart: onStart };
+      },
+      hideMiniGameIntro: function () {
+        if (!this._introOverlay) return;
+        this._introOverlay.button.removeEventListener('click', this._introOverlay.onStart);
+        this._introOverlay.overlay.classList.add('hidden');
+        this._introOverlay = null;
+      },
+      showMiniGameComplete: function (done) {
+        var overlay = document.getElementById('mini-game-complete');
+        if (!overlay) {
+          done();
+          return;
+        }
+
+        overlay.classList.remove('hidden');
+        this._completeOverlay = overlay;
+
+        if (this._completeTimer) clearTimeout(this._completeTimer);
+        this._completeTimer = setTimeout(function () {
+          this.hideMiniGameComplete();
+          done();
+        }.bind(this), 2200);
+      },
+      hideMiniGameComplete: function () {
+        if (!this._completeOverlay) return;
+        this._completeOverlay.classList.add('hidden');
+        this._completeOverlay = null;
       },
       moveTagToCenter: function (tagData, scaleValue, spinTurns) {
         var position = tagData.el.getAttribute('position') || { x: tagData.x, y: tagData.y, z: 0.17 };
@@ -1091,22 +1185,34 @@
           return;
         }
 
-        this.showStaticTags('0.96 0.96 0.96');
-        this.scheduleSoftDrift(420, Number(duration || 0) > 0 ? Number(duration) : Infinity);
+        this.showMiniGameIntro({
+          label: 'Desafio',
+          title: 'Toque nas palavras',
+          text: 'Conclua o desafio tocando em todas as palavras para ver o conteudo desta etapa.',
+          steps: [
+            'Observe as palavras que aparecem ao redor da imagem.',
+            'Toque em cada palavra uma vez.',
+            'Quando todas ficarem verdes, a etapa sera concluida.'
+          ],
+          button: 'Começar'
+        }, function () {
+          this.showStaticTags('0.96 0.96 0.96');
+          this.scheduleSoftDrift(420, Number(duration || 0) > 0 ? Number(duration) : Infinity);
 
-        this._tags.forEach(function (tagData, i) {
-          var onClick = function (evt) {
-            if (evt && evt.stopPropagation) evt.stopPropagation();
-            this.markTagComplete(tagData);
-            this.maybeFinishInteractive();
-          }.bind(this);
+          this._tags.forEach(function (tagData, i) {
+            var onClick = function (evt) {
+              if (evt && evt.stopPropagation) evt.stopPropagation();
+              this.markTagComplete(tagData);
+              this.maybeFinishInteractive();
+            }.bind(this);
 
-          tagData.label.addEventListener('click', onClick);
-          tagData.label.addEventListener('mousedown', onClick);
-          this._interactionCleanups.push(function () {
-            tagData.label.removeEventListener('click', onClick);
-            tagData.label.removeEventListener('mousedown', onClick);
-          });
+            tagData.label.addEventListener('click', onClick);
+            tagData.label.addEventListener('mousedown', onClick);
+            this._interactionCleanups.push(function () {
+              tagData.label.removeEventListener('click', onClick);
+              tagData.label.removeEventListener('mousedown', onClick);
+            });
+          }, this);
         }, this);
       },
       presentDragCenter: function (duration) {
@@ -1116,61 +1222,73 @@
           return;
         }
 
-        this.showStaticTags('0.96 0.96 0.96');
-        this.showDropZone();
+        this.showMiniGameIntro({
+          label: 'Desafio',
+          title: 'Leve ao centro',
+          text: 'Conclua o desafio arrastando todas as palavras para liberar o conteudo.',
+          steps: [
+            'Toque e segure uma palavra.',
+            'Arraste ate o circulo verde no centro.',
+            'Repita ate todas as palavras ficarem verdes.'
+          ],
+          button: 'Começar'
+        }, function () {
+          this.showStaticTags('0.96 0.96 0.96');
+          this.showDropZone();
 
-        this._tags.forEach(function (tagData) {
-          var drag = null;
-          var startDrag = function (evt) {
-            if (tagData.completed) return;
-            if (evt && evt.stopPropagation) evt.stopPropagation();
-            var src = evt && evt.detail && evt.detail.mouseEvent ? evt.detail.mouseEvent : evt;
-            var point = src && src.touches && src.touches[0] ? src.touches[0] : src;
-            var pos = tagData.el.getAttribute('position') || { x: tagData.x, y: tagData.y, z: 0.17 };
-            drag = {
-              x: point && isFinite(point.clientX) ? point.clientX : window.innerWidth / 2,
-              y: point && isFinite(point.clientY) ? point.clientY : window.innerHeight / 2,
-              startX: pos.x,
-              startY: pos.y
+          this._tags.forEach(function (tagData) {
+            var drag = null;
+            var startDrag = function (evt) {
+              if (tagData.completed) return;
+              if (evt && evt.stopPropagation) evt.stopPropagation();
+              var src = evt && evt.detail && evt.detail.mouseEvent ? evt.detail.mouseEvent : evt;
+              var point = src && src.touches && src.touches[0] ? src.touches[0] : src;
+              var pos = tagData.el.getAttribute('position') || { x: tagData.x, y: tagData.y, z: 0.17 };
+              drag = {
+                x: point && isFinite(point.clientX) ? point.clientX : window.innerWidth / 2,
+                y: point && isFinite(point.clientY) ? point.clientY : window.innerHeight / 2,
+                startX: pos.x,
+                startY: pos.y
+              };
+              this.setTagDrift(tagData, false);
+              window.addEventListener('pointermove', moveDrag);
+              window.addEventListener('pointerup', endDrag);
+              window.addEventListener('pointercancel', endDrag);
+            }.bind(this);
+
+            var moveDrag = function (evt) {
+              if (!drag || tagData.completed) return;
+              evt.preventDefault();
+              var dx = (evt.clientX - drag.x) / Math.max(window.innerWidth, 1);
+              var dy = (evt.clientY - drag.y) / Math.max(window.innerHeight, 1);
+              var x = drag.startX + dx * 2.1;
+              var y = drag.startY - dy * 1.45;
+              x = Math.max(-0.86, Math.min(0.86, x));
+              y = Math.max(-0.58, Math.min(0.58, y));
+              tagData.el.setAttribute('position', x.toFixed(4) + ' ' + y.toFixed(4) + ' 0.17');
+
+              if (Math.sqrt(x * x + y * y) < 0.18) {
+                tagData.el.setAttribute('animation__collectpos',
+                  'property:position; to:0 0 0.19; dur:180; easing:easeOutCubic');
+                this.markTagComplete(tagData);
+                this.maybeFinishInteractive();
+                endDrag();
+              }
+            }.bind(this);
+
+            var endDrag = function () {
+              drag = null;
+              window.removeEventListener('pointermove', moveDrag);
+              window.removeEventListener('pointerup', endDrag);
+              window.removeEventListener('pointercancel', endDrag);
             };
-            this.setTagDrift(tagData, false);
-            window.addEventListener('pointermove', moveDrag);
-            window.addEventListener('pointerup', endDrag);
-            window.addEventListener('pointercancel', endDrag);
-          }.bind(this);
 
-          var moveDrag = function (evt) {
-            if (!drag || tagData.completed) return;
-            evt.preventDefault();
-            var dx = (evt.clientX - drag.x) / Math.max(window.innerWidth, 1);
-            var dy = (evt.clientY - drag.y) / Math.max(window.innerHeight, 1);
-            var x = drag.startX + dx * 2.1;
-            var y = drag.startY - dy * 1.45;
-            x = Math.max(-0.86, Math.min(0.86, x));
-            y = Math.max(-0.58, Math.min(0.58, y));
-            tagData.el.setAttribute('position', x.toFixed(4) + ' ' + y.toFixed(4) + ' 0.17');
-
-            if (Math.sqrt(x * x + y * y) < 0.18) {
-              tagData.el.setAttribute('animation__collectpos',
-                'property:position; to:0 0 0.19; dur:180; easing:easeOutCubic');
-              this.markTagComplete(tagData);
-              this.maybeFinishInteractive();
+            tagData.label.addEventListener('mousedown', startDrag);
+            this._interactionCleanups.push(function () {
+              tagData.label.removeEventListener('mousedown', startDrag);
               endDrag();
-            }
-          }.bind(this);
-
-          var endDrag = function () {
-            drag = null;
-            window.removeEventListener('pointermove', moveDrag);
-            window.removeEventListener('pointerup', endDrag);
-            window.removeEventListener('pointercancel', endDrag);
-          };
-
-          tagData.label.addEventListener('mousedown', startDrag);
-          this._interactionCleanups.push(function () {
-            tagData.label.removeEventListener('mousedown', startDrag);
-            endDrag();
-          });
+            });
+          }, this);
         }, this);
       },
       presentScratchFind: function (duration) {
@@ -1180,123 +1298,135 @@
           return;
         }
 
-        this.showStaticTags('0.98 0.98 0.98');
-        this._tags.forEach(function (tagData) {
-          if (tagData.label) {
-            tagData.label.setAttribute('hud-label', 'bg', 'rgba(177,18,27,0.82)');
-          }
-        });
-
-        var scratchCorners = [
-          new THREE.Vector3(),
-          new THREE.Vector3(),
-          new THREE.Vector3(),
-          new THREE.Vector3()
-        ];
-
-        var getWordScreenRect = function (tagData, camera, width, height) {
-          if (!tagData.label || !tagData.label.object3D) return null;
-
-          var halfW = Math.max(0.08, this.data.width * 0.5);
-          var halfH = Math.max(0.04, this.data.height * 0.5);
-          var localCorners = [
-            [-halfW, -halfH, 0],
-            [ halfW, -halfH, 0],
-            [ halfW,  halfH, 0],
-            [-halfW,  halfH, 0]
-          ];
-          var minX = Infinity;
-          var minY = Infinity;
-          var maxX = -Infinity;
-          var maxY = -Infinity;
-
-          tagData.label.object3D.updateWorldMatrix(true, false);
-
-          for (var i = 0; i < localCorners.length; i++) {
-            scratchCorners[i].set(localCorners[i][0], localCorners[i][1], localCorners[i][2]);
-            tagData.label.object3D.localToWorld(scratchCorners[i]);
-            scratchCorners[i].project(camera);
-
-            if (scratchCorners[i].z < -1 || scratchCorners[i].z > 1) return null;
-
-            var x = (scratchCorners[i].x * 0.5 + 0.5) * width;
-            var y = (-scratchCorners[i].y * 0.5 + 0.5) * height;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-          }
-
-          var padX = Math.max(8, (maxX - minX) * 0.08);
-          var padY = Math.max(6, (maxY - minY) * 0.12);
-
-          return {
-            x: Math.max(0, minX - padX),
-            y: Math.max(0, minY - padY),
-            w: Math.min(width, maxX + padX) - Math.max(0, minX - padX),
-            h: Math.min(height, maxY + padY) - Math.max(0, minY - padY)
-          };
-        }.bind(this);
-
-        var getScratchClearedRatio = function (rect) {
-          var canvas = document.getElementById('scratch-canvas');
-          if (!canvas || !rect || rect.w <= 1 || rect.h <= 1) return 0;
-
-          var ctx = canvas.getContext('2d', { willReadFrequently: true });
-          var dprX = canvas.width / Math.max(window.innerWidth, 1);
-          var dprY = canvas.height / Math.max(window.innerHeight, 1);
-          var x = Math.max(0, Math.floor(rect.x * dprX));
-          var y = Math.max(0, Math.floor(rect.y * dprY));
-          var w = Math.max(1, Math.min(canvas.width - x, Math.ceil(rect.w * dprX)));
-          var h = Math.max(1, Math.min(canvas.height - y, Math.ceil(rect.h * dprY)));
-          var data = ctx.getImageData(x, y, w, h).data;
-          var clearPixels = 0;
-          var total = w * h;
-
-          for (var i = 3; i < data.length; i += 4) {
-            if (data[i] < 32) clearPixels++;
-          }
-
-          return total ? clearPixels / total : 0;
-        };
-
-        var findWordAtPoint = function () {
-          var sceneEl = this.el.sceneEl;
-          var camera = sceneEl && sceneEl.camera;
-          var renderer = sceneEl && sceneEl.renderer;
-          var canvas = renderer && renderer.domElement;
-          var width = canvas ? canvas.clientWidth : window.innerWidth;
-          var height = canvas ? canvas.clientHeight : window.innerHeight;
-          var revealThreshold = 0.9;
-
-          if (!camera || !width || !height) return;
-
+        this.showMiniGameIntro({
+          label: 'Desafio',
+          title: 'Raspadinha das palavras',
+          text: 'Conclua o desafio raspando a tela ate encontrar todas as palavras.',
+          steps: [
+            'Passe o dedo sobre a area onde as palavras aparecem.',
+            'Cada palavra fica verde quando for revelada quase inteira.',
+            'Encontre todas para concluir o desafio.'
+          ],
+          button: 'Começar'
+        }, function () {
+          this.showStaticTags('0.98 0.98 0.98');
           this._tags.forEach(function (tagData) {
-            if (tagData.completed) return;
-            var rect = getWordScreenRect(tagData, camera, width, height);
-            if (getScratchClearedRatio(rect) >= revealThreshold) {
-              this.markTagComplete(tagData);
+            if (tagData.label) {
+              tagData.label.setAttribute('hud-label', 'bg', 'rgba(177,18,27,0.82)');
             }
-          }, this);
+          });
 
-          this.maybeFinishInteractive();
-        }.bind(this);
+          var scratchCorners = [
+            new THREE.Vector3(),
+            new THREE.Vector3(),
+            new THREE.Vector3(),
+            new THREE.Vector3()
+          ];
 
-        if (window.startScratchReveal) {
-          window.startScratchReveal({
-            scratchThreshold: 1.1,
-            scratchBrush: 96,
-            disableAutoComplete: true,
-            onScratch: findWordAtPoint
-          }, function () {});
-        } else {
-          this._completeTimer = setTimeout(function () {
+          var getWordScreenRect = function (tagData, camera, width, height) {
+            if (!tagData.label || !tagData.label.object3D) return null;
+
+            var halfW = Math.max(0.08, this.data.width * 0.5);
+            var halfH = Math.max(0.04, this.data.height * 0.5);
+            var localCorners = [
+              [-halfW, -halfH, 0],
+              [ halfW, -halfH, 0],
+              [ halfW,  halfH, 0],
+              [-halfW,  halfH, 0]
+            ];
+            var minX = Infinity;
+            var minY = Infinity;
+            var maxX = -Infinity;
+            var maxY = -Infinity;
+
+            tagData.label.object3D.updateWorldMatrix(true, false);
+
+            for (var i = 0; i < localCorners.length; i++) {
+              scratchCorners[i].set(localCorners[i][0], localCorners[i][1], localCorners[i][2]);
+              tagData.label.object3D.localToWorld(scratchCorners[i]);
+              scratchCorners[i].project(camera);
+
+              if (scratchCorners[i].z < -1 || scratchCorners[i].z > 1) return null;
+
+              var x = (scratchCorners[i].x * 0.5 + 0.5) * width;
+              var y = (-scratchCorners[i].y * 0.5 + 0.5) * height;
+              minX = Math.min(minX, x);
+              minY = Math.min(minY, y);
+              maxX = Math.max(maxX, x);
+              maxY = Math.max(maxY, y);
+            }
+
+            var padX = Math.max(8, (maxX - minX) * 0.08);
+            var padY = Math.max(6, (maxY - minY) * 0.12);
+
+            return {
+              x: Math.max(0, minX - padX),
+              y: Math.max(0, minY - padY),
+              w: Math.min(width, maxX + padX) - Math.max(0, minX - padX),
+              h: Math.min(height, maxY + padY) - Math.max(0, minY - padY)
+            };
+          }.bind(this);
+
+          var getScratchClearedRatio = function (rect) {
+            var canvas = document.getElementById('scratch-canvas');
+            if (!canvas || !rect || rect.w <= 1 || rect.h <= 1) return 0;
+
+            var ctx = canvas.getContext('2d', { willReadFrequently: true });
+            var dprX = canvas.width / Math.max(window.innerWidth, 1);
+            var dprY = canvas.height / Math.max(window.innerHeight, 1);
+            var x = Math.max(0, Math.floor(rect.x * dprX));
+            var y = Math.max(0, Math.floor(rect.y * dprY));
+            var w = Math.max(1, Math.min(canvas.width - x, Math.ceil(rect.w * dprX)));
+            var h = Math.max(1, Math.min(canvas.height - y, Math.ceil(rect.h * dprY)));
+            var data = ctx.getImageData(x, y, w, h).data;
+            var clearPixels = 0;
+            var total = w * h;
+
+            for (var i = 3; i < data.length; i += 4) {
+              if (data[i] < 32) clearPixels++;
+            }
+
+            return total ? clearPixels / total : 0;
+          };
+
+          var findWordAtPoint = function () {
+            var sceneEl = this.el.sceneEl;
+            var camera = sceneEl && sceneEl.camera;
+            var renderer = sceneEl && sceneEl.renderer;
+            var canvas = renderer && renderer.domElement;
+            var width = canvas ? canvas.clientWidth : window.innerWidth;
+            var height = canvas ? canvas.clientHeight : window.innerHeight;
+            var revealThreshold = 0.9;
+
+            if (!camera || !width || !height) return;
+
             this._tags.forEach(function (tagData) {
-              this.markTagComplete(tagData);
+              if (tagData.completed) return;
+              var rect = getWordScreenRect(tagData, camera, width, height);
+              if (getScratchClearedRatio(rect) >= revealThreshold) {
+                this.markTagComplete(tagData);
+              }
             }, this);
+
             this.maybeFinishInteractive();
-          }.bind(this), Math.max(1600, Number(duration || 3200)));
-        }
+          }.bind(this);
+
+          if (window.startScratchReveal) {
+            window.startScratchReveal({
+              scratchThreshold: 1.1,
+              scratchBrush: 96,
+              disableAutoComplete: true,
+              onScratch: findWordAtPoint
+            }, function () {});
+          } else {
+            this._completeTimer = setTimeout(function () {
+              this._tags.forEach(function (tagData) {
+                this.markTagComplete(tagData);
+              }, this);
+              this.maybeFinishInteractive();
+            }.bind(this), Math.max(1600, Number(duration || 3200)));
+          }
+        }, this);
       },
       startOrbit: function () {
         this._orbiting = true;
@@ -1434,6 +1564,26 @@
       </div>
       <div id="welcome-dots" class="welcome-dots" aria-hidden="true"></div>
       <button id="welcome-next-btn" onclick="nextWelcomeStep()">Entendido</button>
+    </div>
+  </div>
+
+  <div id="mini-game-instructions" class="mini-game-overlay hidden">
+    <div class="welcome-card">
+      <p class="welcome-brand">MINI JOGO</p>
+      <p id="mini-game-step-label" class="welcome-step-label">Como jogar</p>
+      <h2 id="mini-game-title">Prepare-se</h2>
+      <p id="mini-game-text">Complete a interação para avançar na trilha.</p>
+      <div id="mini-game-steps" class="mini-game-steps"></div>
+      <button id="mini-game-start-btn" type="button">Começar</button>
+    </div>
+  </div>
+
+  <div id="mini-game-complete" class="mini-game-overlay hidden">
+    <div class="welcome-card mini-game-complete-card">
+      <p class="welcome-brand">TSA</p>
+      <div class="mini-game-complete-burst">✓</div>
+      <h2>Parabéns!</h2>
+      <p>Você concluiu o desafio e desbloqueou a próxima etapa da trilha.</p>
     </div>
   </div>
 
