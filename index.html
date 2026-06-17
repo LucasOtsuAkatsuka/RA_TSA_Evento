@@ -663,6 +663,7 @@
             driftSpeedY: 0.68 + Math.random() * 0.36,
             driftAmpX: 0.14 + Math.random() * 0.07,
             driftAmpY: 0.09 + Math.random() * 0.055,
+            fireflyActive: false,
             completed: false
           });
         }, this);
@@ -766,7 +767,9 @@
           tagData.el.setAttribute('position', '0 0 0.17');
           tagData.el.setAttribute('rotation', '0 0 0');
           tagData.el.setAttribute('scale', '0.001 0.001 0.001');
+          tagData.el.setAttribute('visible', true);
           tagData.driftActive = false;
+          tagData.fireflyActive = false;
           tagData.completed = false;
           if (tagData.label) {
             tagData.label.setAttribute('position', '0 0 0');
@@ -801,6 +804,53 @@
         if (!this._driftTimers) this._driftTimers = [];
         this._driftTimers.forEach(function (timer) { clearTimeout(timer); });
         this._driftTimers = [];
+      },
+      setTagFirefly: function (tagData, active) {
+        if (tagData) tagData.fireflyActive = active === true;
+      },
+      revealTag: function (tagData) {
+        if (!tagData || !tagData.el) return;
+        tagData.el.setAttribute('visible', true);
+        this.setTagFirefly(tagData, true);
+      },
+      scheduleTagReveal: function (tagData, startDelay, stopDelay) {
+        this._driftTimers.push(setTimeout(function () {
+          this.revealTag(tagData);
+        }.bind(this), Math.max(0, startDelay || 0)));
+
+        if (isFinite(stopDelay) && stopDelay > startDelay) {
+          this._driftTimers.push(setTimeout(function () {
+            this.setTagFirefly(tagData, false);
+          }.bind(this), Math.max(0, stopDelay)));
+        }
+      },
+      scheduleTagFirefly: function (tagData, startDelay, stopDelay) {
+        this._driftTimers.push(setTimeout(function () {
+          this.setTagFirefly(tagData, true);
+        }.bind(this), Math.max(0, startDelay || 0)));
+
+        if (isFinite(stopDelay) && stopDelay > startDelay) {
+          this._driftTimers.push(setTimeout(function () {
+            this.setTagFirefly(tagData, false);
+          }.bind(this), Math.max(0, stopDelay)));
+        }
+      },
+      ensureAnimatedTagsVisible: function (delay, scaleValue) {
+        if (!this._tags) return;
+        var scale = scaleValue || '0.96 0.96 0.96';
+        this._driftTimers.push(setTimeout(function () {
+          this._tags.forEach(function (tagData) {
+            if (!tagData || !tagData.el || !tagData.el.object3D) return;
+            var currentScale = tagData.el.object3D.scale;
+            var isStillHidden = Math.max(currentScale.x, currentScale.y, currentScale.z) < 0.08;
+            if (!isStillHidden) return;
+            tagData.el.setAttribute('visible', true);
+            tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.17');
+            tagData.el.setAttribute('rotation', '0 0 0');
+            tagData.el.setAttribute('scale', scale);
+            this.setTagFirefly(tagData, true);
+          }, this);
+        }.bind(this), Math.max(0, delay || 900)));
       },
       setTagDrift: function (tagData, active) {
         tagData.driftActive = active;
@@ -848,6 +898,7 @@
           tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.17');
           tagData.el.setAttribute('rotation', '0 0 0');
           tagData.el.setAttribute('scale', scale);
+          this.revealTag(tagData);
           tagData.completed = false;
           if (tagData.label) {
             tagData.label.setAttribute('hud-label', 'bg', this.data.bg);
@@ -860,6 +911,8 @@
         tagData.completed = true;
         this._completedWords++;
         this.setTagDrift(tagData, false);
+        this.setTagFirefly(tagData, false);
+        tagData.el.setAttribute('visible', true);
         if (tagData.label) {
           tagData.label.setAttribute('hud-label', 'bg', 'rgba(34,197,94,0.82)');
           tagData.label.setAttribute('hud-label', 'color', '#ffffff');
@@ -994,6 +1047,7 @@
         var spin = isFinite(Number(spinTurns)) ? Number(spinTurns) : 0;
 
         this.setTagDrift(tagData, false);
+        this.setTagFirefly(tagData, false);
         tagData.el.removeAttribute('animation__exitpos');
         tagData.el.removeAttribute('animation__exitscale');
         tagData.el.removeAttribute('animation__vortexpos');
@@ -1028,6 +1082,7 @@
         this._tags.forEach(function (tagData, i) {
           var delay = outDelay + i * 24;
           this._driftTimers.push(setTimeout(function () {
+            this.setTagFirefly(tagData, false);
             this.moveTagToCenter(tagData, scale, 0);
           }.bind(this), delay));
         }, this);
@@ -1044,6 +1099,7 @@
         this._tags.forEach(function (tagData, i) {
           var delay = i * step;
           var moveDelay = delay + this.data.hold;
+          this.scheduleTagReveal(tagData, delay + 240);
 
           tagData.el.setAttribute('animation__burstpos',
             'property:position; from:0 0 0.17; to:0 0 0.2; dur:320; delay:' + delay + '; easing:easeOutCubic');
@@ -1070,6 +1126,7 @@
         this._tags.forEach(function (tagData, i) {
           var delay = vortexDelay + i * 70;
           this._driftTimers.push(setTimeout(function () {
+            this.setTagFirefly(tagData, false);
             this.moveTagToCenter(tagData, '0.96 0.96 0.96', 720);
           }.bind(this), delay));
         }, this);
@@ -1186,9 +1243,9 @@
         }
 
         this.showMiniGameIntro({
-          label: 'Desafio',
+          label: 'Interacao com a marca',
           title: 'Toque nas palavras',
-          text: 'Conclua o desafio tocando em todas as palavras para ver o conteudo desta etapa.',
+          text: 'Toque em todas as palavras para ver o conteudo desta etapa.',
           steps: [
             'Observe as palavras que aparecem ao redor da imagem.',
             'Toque em cada palavra uma vez.',
@@ -1223,9 +1280,9 @@
         }
 
         this.showMiniGameIntro({
-          label: 'Desafio',
+          label: 'Interacao com a marca',
           title: 'Leve ao centro',
-          text: 'Conclua o desafio arrastando todas as palavras para liberar o conteudo.',
+          text: 'Arraste todas as palavras para liberar o conteudo.',
           steps: [
             'Toque e segure uma palavra.',
             'Arraste ate o circulo verde no centro.',
@@ -1299,13 +1356,13 @@
         }
 
         this.showMiniGameIntro({
-          label: 'Desafio',
+          label: 'Interacao com a marca',
           title: 'Interacao com a marca',
           text: 'Conclua a interacao com a marca ate encontrar todas as palavras.',
           steps: [
             'Passe o dedo sobre a area onde as palavras aparecem.',
             'Cada palavra fica verde quando for revelada quase inteira.',
-            'Encontre todas para concluir o desafio.'
+            'Encontre todas para concluir a interacao.'
           ],
           button: 'Começar'
         }, function () {
@@ -1435,7 +1492,9 @@
           this._tags.forEach(function (tagData) {
             tagData.el.setAttribute('position', tagData.x + ' ' + tagData.y + ' 0.16');
             tagData.el.setAttribute('scale', '0.96 0.96 0.96');
+            tagData.el.setAttribute('visible', true);
             this.setTagDrift(tagData, true);
+            this.setTagFirefly(tagData, true);
             tagData.el.setAttribute('animation__pulse',
               'property:scale; from:0.96 0.96 0.96; to:1.04 1.04 1.04; dir:alternate; dur:1500; loop:true; easing:easeInOutSine');
           }, this);
@@ -1568,13 +1627,14 @@
   <div id="scratch-reveal" class="hidden" aria-hidden="true">
     <canvas id="scratch-canvas"></canvas>
     <div id="scratch-hand-hint" class="scratch-hand-hint" aria-hidden="true">
-      <span class="scratch-hand">
-        <span class="scratch-finger scratch-index"></span>
-        <span class="scratch-finger scratch-middle"></span>
-        <span class="scratch-finger scratch-ring"></span>
-        <span class="scratch-palm"></span>
-        <span class="scratch-thumb"></span>
-      </span>
+      <svg class="scratch-hand-icon" viewBox="0 0 96 112" role="img" aria-hidden="true">
+        <path class="scratch-hand-shape" d="M44 8 C51 8 56 14 56 22 L56 56 C60 52 66 53 69 59 C73 55 80 57 82 64 C86 62 91 65 92 71 C95 86 90 98 86 106 C84 110 80 112 75 112 L39 112 C34 112 30 108 30 103 L30 91 C30 84 28 79 24 73 L9 49 C6 44 8 38 13 35 C18 32 25 34 29 40 L38 54 L38 22 C38 14 37 8 44 8 Z" />
+        <path class="scratch-hand-detail" d="M56 56 L56 78" />
+        <path class="scratch-hand-detail" d="M69 59 L69 79" />
+        <path class="scratch-hand-detail" d="M82 64 L81 80" />
+        <path class="scratch-hand-detail" d="M30 91 C30 82 27 77 23 70" />
+        <path class="scratch-hand-swipe" d="M14 22 C28 12 41 13 52 22" />
+      </svg>
     </div>
     <div class="scratch-copy">
       <strong>Interação com a marca</strong>

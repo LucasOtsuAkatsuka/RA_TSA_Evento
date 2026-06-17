@@ -325,13 +325,13 @@ function startScratchReveal(options, done) {
       window.innerHeight * 0.42,
       Math.max(window.innerWidth, window.innerHeight) * 0.85
     );
-    gradient.addColorStop(0, 'rgba(16, 16, 18, 0.96)');
-    gradient.addColorStop(0.58, 'rgba(0, 0, 0, 0.98)');
+    gradient.addColorStop(0, 'rgba(4, 4, 6, 0.985)');
+    gradient.addColorStop(0.58, 'rgba(0, 0, 0, 0.995)');
     gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    ctx.fillStyle = 'rgba(233, 69, 96, 0.08)';
+    ctx.fillStyle = 'rgba(233, 69, 96, 0.045)';
     for (var y = 0; y < window.innerHeight; y += 26) {
       ctx.fillRect(0, y, window.innerWidth, 1);
     }
@@ -1011,6 +1011,7 @@ function registerTargetAnimations() {
     var wordBackdropTimer = null;
     var wordBackdropFrame = null;
     var fireflyWorldPos = new THREE.Vector3();
+    var fireflyWorldScale = new THREE.Vector3();
     var sequenceTimers = [];
 
     function setIntroText(selector, text) {
@@ -1377,15 +1378,35 @@ function registerTargetAnimations() {
 
       var sceneEl = document.getElementById('ar-scene');
       var camera = sceneEl && sceneEl.camera;
-      var tags = orbitEl && orbitEl.components && orbitEl.components['orbit-tags'] && orbitEl.components['orbit-tags']._tags;
+      var orbitComponent = orbitEl && orbitEl.components && orbitEl.components['orbit-tags'];
+      var tags = orbitComponent && orbitComponent._tags;
+      var delayedFirefly = orbitComponent && orbitComponent._fireflySyncMode === 'delayed';
 
       if (camera && tags && tags.length) {
+        var visibleTags = tags.filter(function (tagData) {
+          if (!tagData || !tagData.el || !tagData.el.object3D) return false;
+          if (!tagData.el.object3D.visible) return false;
+          if (delayedFirefly) return tagData.fireflyActive === true;
+          tagData.el.object3D.getWorldScale(fireflyWorldScale);
+          return Math.max(fireflyWorldScale.x, fireflyWorldScale.y, fireflyWorldScale.z) > 0.08;
+        });
+
         for (var i = 0; i < 3; i++) {
-          var tagData = tags[i] || tags[tags.length - 1];
-          if (!tagData || !tagData.el || !tagData.el.object3D) continue;
+          var tagData = visibleTags[i];
+          if (!tagData || !tagData.el || !tagData.el.object3D) {
+            darkOverlay.style.setProperty('--firefly-x' + (i + 1), '-200%');
+            darkOverlay.style.setProperty('--firefly-y' + (i + 1), '-200%');
+            continue;
+          }
 
           tagData.el.object3D.getWorldPosition(fireflyWorldPos);
           fireflyWorldPos.project(camera);
+
+          if (fireflyWorldPos.z < -1 || fireflyWorldPos.z > 1) {
+            darkOverlay.style.setProperty('--firefly-x' + (i + 1), '-200%');
+            darkOverlay.style.setProperty('--firefly-y' + (i + 1), '-200%');
+            continue;
+          }
 
           var x = Math.max(0, Math.min(100, (fireflyWorldPos.x * 0.5 + 0.5) * 100));
           var y = Math.max(0, Math.min(100, (-fireflyWorldPos.y * 0.5 + 0.5) * 100));
@@ -1443,9 +1464,14 @@ function registerTargetAnimations() {
         return;
       }
 
+      var wordAnimation = options.animation || 'vortex';
+      if (orbitEl.components && orbitEl.components['orbit-tags']) {
+        orbitEl.components['orbit-tags']._fireflySyncMode = wordAnimation === 'vortex' ? 'delayed' : 'scale';
+      }
+
       startWordBackdrop(options);
 
-      if (options.animation === 'orbit') {
+      if (wordAnimation === 'orbit') {
         orbitEl.setAttribute('visible', true);
         orbitEl.components['orbit-tags'].startOrbit();
         var orbitTimer = setTimeout(function () {
@@ -1456,7 +1482,6 @@ function registerTargetAnimations() {
         return;
       }
 
-      var wordAnimation = options.animation || 'vortex';
       var completed = false;
       var done = function () {
         if (completed) return;
@@ -2295,6 +2320,7 @@ function registerTargetAnimations() {
       var z = isFinite(Number(options.z)) ? Number(options.z) : Number(brandData.videoZ || 0.28);
       var bg = options.bg || brandData.videoBg || '#000000';
       var floatAmount = isFinite(Number(options.floatAmount)) ? Number(options.floatAmount) : Number(brandData.videoFloatAmount || 0.04);
+      var previewOnly = options.previewOnly === true;
       var sourceEl = ensureVideoSourceEl();
       var sourceId = '#' + sourceEl.id;
       var resolvedSrc = withAssetCacheBuster(src);
@@ -2319,11 +2345,12 @@ function registerTargetAnimations() {
         }
       }
 
+      var wasVisible = videoShowcaseEl.getAttribute('visible') === true || videoShowcaseEl.getAttribute('visible') === 'true';
       videoShowcaseEl.removeAttribute('animation__pop');
       videoShowcaseEl.removeAttribute('animation__float');
       videoShowcaseEl.removeAttribute('animation__out');
       videoShowcaseEl.setAttribute('position', x + ' ' + y + ' ' + z);
-      videoShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
+      videoShowcaseEl.setAttribute('scale', wasVisible ? '1 1 1' : '0.001 0.001 0.001');
       videoShowcaseEl.setAttribute('visible', true);
       applyVideoShowcaseSize(width, height);
 
@@ -2358,6 +2385,15 @@ function registerTargetAnimations() {
 
       var tryPlay = function () {
         if (cancelled || !videoShowcaseEl || videoShowcaseEl.getAttribute('visible') === false) return;
+        if (previewOnly) {
+          try {
+            sourceEl.pause();
+            sourceEl.currentTime = 0;
+          } catch (err) {
+            console.warn('[WebAR] Nao foi possivel preparar preview do video:', err);
+          }
+          return;
+        }
         var playPromise = sourceEl.play();
         if (playPromise && typeof playPromise.catch === 'function') {
           playPromise.catch(function (err) {
@@ -2368,11 +2404,26 @@ function registerTargetAnimations() {
       sourceEl.onloadeddata = tryPlay;
       sourceEl.oncanplay = tryPlay;
 
-      videoShowcaseEl.setAttribute('animation__pop',
-        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack');
+      if (!wasVisible) {
+        videoShowcaseEl.setAttribute('animation__pop',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack');
+      }
       videoShowcaseEl.setAttribute('animation__float',
         'property:position; from:' + x + ' ' + y + ' ' + z + '; to:' + x + ' ' + (y + floatAmount) + ' ' + z +
         '; dir:alternate; dur:1900; loop:true; easing:easeInOutSine');
+
+      if (previewOnly) {
+        var previewTimer = setTimeout(function () {
+          if (cancelled || !sourceEl || !videoShowcaseEl || videoShowcaseEl.getAttribute('visible') === false) return;
+          try {
+            sourceEl.pause();
+            sourceEl.currentTime = 0;
+          } catch (err) {
+            console.warn('[WebAR] Nao foi possivel pausar preview do video:', err);
+          }
+        }, 180);
+        sequenceTimers.push(previewTimer);
+      }
     }
 
     function showCarousel3D(options) {
@@ -2674,25 +2725,13 @@ function registerTargetAnimations() {
             }
 
             if (isOptionEnabled(step.scratchEffect)) {
-              var originalNext = next;
-              var scratchDone = false;
-              var stepDone = false;
-              var advanced = false;
-              var releaseScratchStep = function () {
-                if (advanced || cancelled || !scratchDone || !stepDone) return;
-                advanced = true;
-                originalNext();
-              };
-              next = function () {
-                stepDone = true;
-                releaseScratchStep();
-              };
-
+              if (type === 'videoPlayer') {
+                showVideoShowcase(Object.assign({}, step, { previewOnly: true }));
+              }
               startScratchReveal(step, function () {
-                scratchDone = true;
-                releaseScratchStep();
+                if (cancelled) return;
+                runStep();
               });
-              runStep();
               return;
             }
 

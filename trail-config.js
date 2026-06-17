@@ -36,7 +36,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 100,
-          "duration": 3000,
+          "duration": 8000,
           "words": [
             "Ecossistema",
             "Tecnologia",
@@ -169,7 +169,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "",
+          "image": "assets/images/painel-01/image-2-marca-02-3-image.png",
           "title": "BACKGROUND TEAMS",
           "width": 0.82,
           "height": 0.56,
@@ -961,7 +961,7 @@ window.TRAIL_CONFIG = {
         {
           "type": "words",
           "order": 2,
-          "stepTitle": "DESAFIO",
+          "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
@@ -973,7 +973,7 @@ window.TRAIL_CONFIG = {
             "Ecossistema",
             "Soluções"
           ],
-          "animation": "wave",
+          "animation": "rain",
           "layout": "circle",
           "backdropEffect": false,
           "fireflyEffect": true,
