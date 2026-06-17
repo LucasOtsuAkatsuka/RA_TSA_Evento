@@ -37,6 +37,11 @@ var STEP_TYPE_OPTIONS = [
   { value: 'model3d', label: 'Modelo 3D' }
 ];
 
+var CAROUSEL_ANIMATION_OPTIONS = [
+  { value: 'orbit', label: 'Carrossel girando em 3D' },
+  { value: 'stack', label: 'Pilha: troca frente e tras' }
+];
+
 var WORD_ANIMATION_OPTIONS = [
   { value: 'vortex', label: 'Vortex + orbita' },
   { value: 'orbit', label: 'Orbita direta' },
@@ -46,7 +51,7 @@ var WORD_ANIMATION_OPTIONS = [
   { value: 'constellation', label: 'Constelacao' },
   { value: 'clickCollect', label: 'Interativo: clicar em todas' },
   { value: 'dragCenter', label: 'Interativo: arrastar para o centro' },
-  { value: 'scratchFind', label: 'Interativo: raspadinha das palavras' }
+  { value: 'scratchFind', label: 'Interacao com a marca' }
 ];
 
 var WORD_LAYOUT_OPTIONS = [
@@ -415,9 +420,13 @@ function featureEditorHtml(point) {
           fieldHtml('carouselTitleBg', 'Cor do fundo do titulo', point.carouselTitleBg || 'rgba(177,18,27,0.72)', 'text') +
           fieldHtml('carouselTitleColor', 'Cor do titulo', point.carouselTitleColor || '#ffffff', 'text') +
           fieldHtml('carouselTitleFont', 'Tamanho da fonte do titulo', point.carouselTitleFont || 50, 'number') +
+          selectHtml('carouselAnimation', 'Tipo de animacao', point.carouselAnimation || 'orbit', CAROUSEL_ANIMATION_OPTIONS) +
           fieldHtml('carouselRadius', 'Raio do carrossel', point.carouselRadius || 0.82, 'number', '0.01') +
           fieldHtml('carouselSpeed', 'Velocidade de giro', point.carouselSpeed || 18, 'number') +
           pointCheckboxHtml('carouselFocusAnimation', 'Animacao destaque: gira rapido e da zoom no item', point.carouselFocusAnimation) +
+          fieldHtml('carouselStackInterval', 'Tempo entre trocas da pilha', point.carouselStackInterval || 1700, 'number') +
+          fieldHtml('carouselStackDepth', 'Distancia entre camadas da pilha', point.carouselStackDepth || 0.18, 'number', '0.01') +
+          fieldHtml('carouselStackOffsetY', 'Altura entre camadas da pilha', point.carouselStackOffsetY || 0.055, 'number', '0.01') +
           fieldHtml('carouselItemWidth', 'Largura dos cards', point.carouselItemWidth || 0.52, 'number', '0.01') +
           fieldHtml('carouselItemHeight', 'Altura dos cards', point.carouselItemHeight || 0.68, 'number', '0.01') +
           fieldHtml('carouselCardBg', 'Cor do fundo das imagens', point.carouselCardBg || '#ffffff', 'text') +
@@ -748,9 +757,13 @@ function stepEditorHtml(step, index) {
       stepFieldHtml(index, 'titleBg', 'Cor do fundo do titulo do carrossel', step.titleBg || 'rgba(177,18,27,0.72)', 'text') +
       stepFieldHtml(index, 'titleColor', 'Cor do titulo do carrossel', step.titleColor || '#ffffff', 'text') +
       stepFieldHtml(index, 'titleFont', 'Tamanho da fonte do titulo do carrossel', valueOrDefault(step.titleFont, 50), 'number') +
+      stepSelectHtml(index, 'animation', 'Tipo de animacao', step.animation || 'orbit', CAROUSEL_ANIMATION_OPTIONS) +
       stepFieldHtml(index, 'radius', 'Raio do carrossel', valueOrDefault(step.radius, 0.82), 'number', '0.01') +
       stepFieldHtml(index, 'speed', 'Velocidade de giro', valueOrDefault(step.speed, 18), 'number') +
       stepCheckboxHtml(index, 'focusAnimation', 'Animacao destaque: gira rapido e da zoom no item', step.focusAnimation) +
+      stepFieldHtml(index, 'stackInterval', 'Tempo entre trocas da pilha', valueOrDefault(step.stackInterval, 1700), 'number') +
+      stepFieldHtml(index, 'stackDepth', 'Distancia entre camadas da pilha', valueOrDefault(step.stackDepth, 0.18), 'number', '0.01') +
+      stepFieldHtml(index, 'stackOffsetY', 'Altura entre camadas da pilha', valueOrDefault(step.stackOffsetY, 0.055), 'number', '0.01') +
       stepFieldHtml(index, 'focusScale', 'Zoom do item em destaque', valueOrDefault(step.focusScale, 2.15), 'number', '0.01') +
       stepFieldHtml(index, 'focusY', 'Altura do item em destaque', valueOrDefault(step.focusY, 0.04), 'number', '0.01') +
       stepFieldHtml(index, 'focusZ', 'Distancia frontal do destaque', valueOrDefault(step.focusZ, 0.72), 'number', '0.01') +
@@ -785,7 +798,7 @@ function stepEditorHtml(step, index) {
       '</div>' +
       '<div class="editor-grid">' +
         stepSelectHtml(index, 'type', 'Funcionalidade', type, STEP_TYPE_OPTIONS) +
-        stepCheckboxHtml(index, 'scratchEffect', 'Raspadinha interativa antes do bloco', step.scratchEffect) +
+        stepCheckboxHtml(index, 'scratchEffect', 'Interacao com a marca antes do bloco', step.scratchEffect) +
         stepFieldHtml(index, 'stepTitle', 'Titulo do bloco', step.stepTitle || '', 'text') +
         stepFieldHtml(index, 'stepTitleBg', 'Cor do fundo do titulo do bloco', step.stepTitleBg || 'rgba(177,18,27,0.72)', 'text') +
         stepFieldHtml(index, 'stepTitleColor', 'Cor do titulo do bloco', step.stepTitleColor || '#ffffff', 'text') +
@@ -999,9 +1012,13 @@ function defaultStep(type, order) {
       titleBg: 'rgba(177,18,27,0.72)',
       titleColor: '#ffffff',
       titleFont: 50,
+      animation: 'orbit',
       radius: 0.82,
       speed: 18,
       focusAnimation: false,
+      stackInterval: 1700,
+      stackDepth: 0.18,
+      stackOffsetY: 0.055,
       focusScale: 2.15,
       focusY: 0.04,
       focusZ: 0.72,
@@ -1229,9 +1246,13 @@ function legacyStepsFromPoint(point) {
         titleBg: point.carouselTitleBg || 'rgba(177,18,27,0.72)',
         titleColor: point.carouselTitleColor || '#ffffff',
         titleFont: Number(point.carouselTitleFont || 50),
+        animation: point.carouselAnimation || 'orbit',
         radius: Number(point.carouselRadius || 0.82),
         speed: Number(point.carouselSpeed || 18),
         focusAnimation: !!point.carouselFocusAnimation,
+        stackInterval: Number(point.carouselStackInterval || 1700),
+        stackDepth: Number(point.carouselStackDepth || 0.18),
+        stackOffsetY: Number(point.carouselStackOffsetY || 0.055),
         itemWidth: Number(point.carouselItemWidth || 0.52),
         itemHeight: Number(point.carouselItemHeight || 0.68),
         cardBg: point.carouselCardBg || '#ffffff',
@@ -1375,6 +1396,9 @@ function bindEditorEvents(point) {
         field === 'imageFloatAmount' ||
         field === 'carouselRadius' ||
         field === 'carouselSpeed' ||
+        field === 'carouselStackInterval' ||
+        field === 'carouselStackDepth' ||
+        field === 'carouselStackOffsetY' ||
         field === 'carouselItemWidth' ||
         field === 'carouselItemHeight' ||
         field === 'carouselTitleFont' ||
@@ -1451,6 +1475,9 @@ function bindEditorEvents(point) {
         field === 'focusZ' ||
         field === 'focusSpinDuration' ||
         field === 'focusHoldDuration' ||
+        field === 'stackInterval' ||
+        field === 'stackDepth' ||
+        field === 'stackOffsetY' ||
         field === 'spinSpeed'
       ) {
         step[field] = Number(input.value || 0);
@@ -2024,9 +2051,13 @@ function normalizePointForSave(point) {
     clean.carouselTitleBg = point.carouselTitleBg || 'rgba(177,18,27,0.72)';
     clean.carouselTitleColor = point.carouselTitleColor || '#ffffff';
     clean.carouselTitleFont = Number(point.carouselTitleFont || 50);
+    clean.carouselAnimation = point.carouselAnimation || 'orbit';
     clean.carouselRadius = Number(point.carouselRadius || 0.82);
     clean.carouselSpeed = Number(point.carouselSpeed || 18);
     clean.carouselFocusAnimation = !!point.carouselFocusAnimation;
+    clean.carouselStackInterval = Number(point.carouselStackInterval || 1700);
+    clean.carouselStackDepth = Number(point.carouselStackDepth || 0.18);
+    clean.carouselStackOffsetY = Number(point.carouselStackOffsetY || 0.055);
     clean.carouselItemWidth = Number(point.carouselItemWidth || 0.52);
     clean.carouselItemHeight = Number(point.carouselItemHeight || 0.68);
     clean.carouselCardBg = point.carouselCardBg || '#ffffff';
@@ -2135,9 +2166,13 @@ function normalizeStepsForSave(steps) {
       clean.titleBg = step.titleBg || 'rgba(177,18,27,0.72)';
       clean.titleColor = step.titleColor || '#ffffff';
       clean.titleFont = Number(valueOrDefault(step.titleFont, 50));
+      clean.animation = step.animation || 'orbit';
       clean.radius = Number(valueOrDefault(step.radius, 0.82));
       clean.speed = Number(valueOrDefault(step.speed, 18));
       clean.focusAnimation = !!step.focusAnimation;
+      clean.stackInterval = Number(valueOrDefault(step.stackInterval, 1700));
+      clean.stackDepth = Number(valueOrDefault(step.stackDepth, 0.18));
+      clean.stackOffsetY = Number(valueOrDefault(step.stackOffsetY, 0.055));
       clean.focusScale = Number(valueOrDefault(step.focusScale, 2.15));
       clean.focusY = Number(valueOrDefault(step.focusY, 0.04));
       clean.focusZ = Number(valueOrDefault(step.focusZ, 0.72));

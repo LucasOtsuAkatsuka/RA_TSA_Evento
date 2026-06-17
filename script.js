@@ -621,9 +621,13 @@ function getIslandSteps(item) {
         type: 'carousel3d',
         order: 1,
         duration: Number(item.carouselDuration || 0),
+        animation: item.carouselAnimation || 'orbit',
         radius: Number(item.carouselRadius || 0.82),
         speed: Number(item.carouselSpeed || 18),
         focusAnimation: !!item.carouselFocusAnimation,
+        stackInterval: Number(item.carouselStackInterval || 1700),
+        stackDepth: Number(item.carouselStackDepth || 0.18),
+        stackOffsetY: Number(item.carouselStackOffsetY || 0.055),
         itemWidth: Number(item.carouselItemWidth || 0.52),
         itemHeight: Number(item.carouselItemHeight || 0.68),
         modelSize: Number(item.carouselModelSize || 0.46),
@@ -775,7 +779,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="image-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-image-content" adaptive-scale="factor:0.62; min:0.74; max:2.35; screen:350; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-image-content" adaptive-scale="factor:0.78; min:0.9; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-image-card">' +
           '<a-entity class="ar-image-spin">' +
             '<a-plane class="ar-image-glow" width="1.18" height="0.92" position="0 0 0.006" opacity="0.82" material="shader:flat; transparent:true; depthWrite:false; side:double" visible="false"></a-plane>' +
@@ -788,7 +792,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="video-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-video-content" adaptive-scale="factor:0.62; min:0.74; max:2.35; screen:350; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-video-content" adaptive-scale="factor:0.78; min:0.9; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-video-card">' +
           '<a-plane class="ar-video-bg" width="0.82" height="0.56" position="0 0 0.012" color="#000000" material="shader:flat; side:double"></a-plane>' +
           '<a-plane class="ar-video-plane" width="0.82" height="0.56" position="0 0 0.02" material="shader:flat; transparent:true; side:front"></a-plane>' +
@@ -798,7 +802,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="carousel-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-carousel-content" adaptive-scale="factor:0.58; min:0.72; max:2.2; screen:340; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-carousel-content" adaptive-scale="factor:0.74; min:0.88; max:2.6; screen:340; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-carousel-stage"></a-entity>' +
         '<a-entity class="ar-carousel-title" hud-label="text:; width:1.35; height:0.2; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.72 0" visible="false"></a-entity>' +
       '</a-entity>' +
@@ -991,6 +995,8 @@ function registerTargetAnimations() {
     var carouselTitleEl = carouselShowcaseEl ? carouselShowcaseEl.querySelector('.ar-carousel-title') : null;
     var carouselFocusFrame = null;
     var carouselFocusState = null;
+    var carouselStackFrame = null;
+    var carouselStackState = null;
     var videoSourceEl = null;
     var phraseTypingTimer = null;
     var wordBackdropTimer = null;
@@ -1124,6 +1130,7 @@ function registerTargetAnimations() {
         carouselShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
       }
       stopCarouselFocus();
+      stopCarouselStack();
       if (carouselStageEl) {
         carouselStageEl.removeAttribute('continuous-spin');
         while (carouselStageEl.firstChild) {
@@ -1662,6 +1669,7 @@ function registerTargetAnimations() {
       var labelWidth = Number(options.itemTitleWidth || Math.max(width, 0.68));
       var labelHeight = Number(options.itemTitleHeight || 0.16);
 
+      label.classList.add('ar-carousel-label');
       label.setAttribute('position', '0 ' + (-(height / 2) - 0.12) + ' 0.06');
       label.setAttribute('hud-label', 'text', text);
       label.setAttribute('hud-label', 'width', labelWidth);
@@ -1765,6 +1773,136 @@ function registerTargetAnimations() {
         if (cardEl.dataset.baseRotation) cardEl.setAttribute('rotation', cardEl.dataset.baseRotation);
         if (cardEl.object3D) cardEl.object3D.scale.set(1, 1, 1);
       });
+    }
+
+    function stopCarouselStack() {
+      if (carouselStackFrame) {
+        cancelAnimationFrame(carouselStackFrame);
+        carouselStackFrame = null;
+      }
+      carouselStackState = null;
+    }
+
+    function setStackCardTransform(cardEl, y, z, scale, visible, labelVisible, rotationX, rotationZ) {
+      cardEl.setAttribute('visible', visible !== false);
+      cardEl.setAttribute('position', '0 ' + y + ' ' + z);
+      cardEl.setAttribute('rotation', Number(rotationX || 0) + ' 0 ' + Number(rotationZ || 0));
+      cardEl.setAttribute('scale', scale + ' ' + scale + ' ' + scale);
+      Array.from(cardEl.querySelectorAll('.ar-carousel-label')).forEach(function (labelEl) {
+        labelEl.setAttribute('visible', labelVisible === true);
+      });
+      if (cardEl.object3D) {
+        cardEl.object3D.renderOrder = Math.round((z + 2) * 1000);
+        cardEl.object3D.traverse(function (child) {
+          child.renderOrder = cardEl.object3D.renderOrder;
+        });
+      }
+    }
+
+    function startCarouselStack(items, options) {
+      stopCarouselStack();
+      if (!carouselStageEl || !items.length) return;
+
+      var cards = Array.from(carouselStageEl.children);
+      var total = cards.length;
+      var visibleLayers = Math.min(total, Math.max(3, Number(options.stackLayers || 4)));
+      var intervalMs = Math.max(900, Number(options.stackInterval || 1700));
+      var transitionMs = Math.min(intervalMs * 0.55, Math.max(420, Number(options.stackTransition || 680)));
+      var holdMs = Math.max(180, intervalMs - transitionMs);
+      var depth = Math.max(0.04, Number(options.stackDepth || 0.18));
+      var offsetY = Math.max(0.01, Number(options.stackOffsetY || 0.055));
+      var frontZ = Number(options.stackFrontZ || 0.22);
+      var startTime = null;
+
+      cards.forEach(function (cardEl) {
+        cardEl.removeAttribute('animation__in');
+      });
+      carouselStackState = { cards: cards };
+      carouselStageEl.object3D.rotation.set(0, 0, 0);
+
+      function layerScale(order) {
+        return Math.max(0.76, 1 - order * 0.07);
+      }
+
+      function layerY(order) {
+        return -order * offsetY;
+      }
+
+      function layerZ(order) {
+        return frontZ - order * depth;
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function placeAtLayer(cardEl, order, visiblePadding, labelVisible) {
+        var clampedOrder = Math.max(0, order);
+        var visible = clampedOrder < visibleLayers + Number(visiblePadding || 0);
+        var showLabel = labelVisible === undefined ? visible && clampedOrder < 0.35 : labelVisible;
+        setStackCardTransform(
+          cardEl,
+          layerY(clampedOrder),
+          layerZ(clampedOrder),
+          layerScale(clampedOrder),
+          visible,
+          showLabel
+        );
+      }
+
+      function tick(time) {
+        if (!carouselStackState || cancelled || !carouselStageEl) {
+          carouselStackFrame = null;
+          return;
+        }
+
+        if (startTime === null) startTime = time;
+        var elapsed = time - startTime;
+        var segment = Math.floor(elapsed / intervalMs);
+        var local = elapsed % intervalMs;
+        var frontIndex = segment % total;
+        var transitioning = total > 1 && local >= holdMs;
+        var t = transitioning ? easeInOutCubic((local - holdMs) / transitionMs) : 0;
+
+        cards.forEach(function (cardEl, index) {
+          var order = (index - frontIndex + total) % total;
+
+          if (!transitioning) {
+            placeAtLayer(cardEl, order);
+            return;
+          }
+
+          if (order === 0) {
+            var backOrder = Math.max(1, total - 1);
+            var arc = Math.sin(Math.PI * t);
+            var yOut = lerp(layerY(0), layerY(backOrder), t) - arc * 0.22;
+            var zOut = lerp(layerZ(0), layerZ(backOrder), t) - arc * 0.06;
+            var scaleOut = lerp(layerScale(0), layerScale(backOrder), t);
+            setStackCardTransform(cardEl, yOut, zOut, scaleOut, true, false, -10 * arc, -5 * t);
+            return;
+          }
+
+          if (order === 1) {
+            var incomingArc = Math.sin(Math.PI * t);
+            var yIn = lerp(layerY(1), layerY(0), t) + incomingArc * 0.22;
+            var zIn = lerp(layerZ(1), layerZ(0), t) + incomingArc * 0.08;
+            var scaleIn = lerp(layerScale(1), layerScale(0), t);
+            setStackCardTransform(cardEl, yIn, zIn, scaleIn, true, t > 0.62, 8 * incomingArc, 5 * (1 - t));
+            return;
+          }
+
+          if (order < visibleLayers + 1) {
+            placeAtLayer(cardEl, order - t, 1, false);
+            return;
+          }
+
+          placeAtLayer(cardEl, order);
+        });
+
+        carouselStackFrame = requestAnimationFrame(tick);
+      }
+
+      carouselStackFrame = requestAnimationFrame(tick);
     }
 
     function easeInOutCubic(t) {
@@ -2243,13 +2381,17 @@ function registerTargetAnimations() {
         carouselStageEl.removeChild(carouselStageEl.firstChild);
       }
       stopCarouselFocus();
+      stopCarouselStack();
+      carouselStageEl.removeAttribute('continuous-spin');
       carouselStageEl.object3D.rotation.set(0, 0, 0);
 
       items.forEach(function (item, index) {
         carouselStageEl.appendChild(createCarouselCard(item, index, items.length, options));
       });
 
-      if (isOptionEnabled(options.focusAnimation || brandData.carouselFocusAnimation)) {
+      if ((options.animation || brandData.carouselAnimation || 'orbit') === 'stack') {
+        startCarouselStack(items, options);
+      } else if (isOptionEnabled(options.focusAnimation || brandData.carouselFocusAnimation)) {
         carouselStageEl.removeAttribute('continuous-spin');
         var focusStartTimer = setTimeout(function () {
           startCarouselFocus(items, options);
@@ -2668,97 +2810,15 @@ function registerTargetAnimations() {
 //  TELA DE BOAS-VINDAS (aparece após arReady)
 // ================================================================
 var _welcomeTimer = null;
-var _welcomeStep = 0;
-var welcomeSteps = [
-  {
-    title: 'Quatro painéis de marca',
-    text: 'A experiência é dividida em quatro painéis. Cada painel representa uma marca diferente, com uma jornada própria para completar.',
-    visual: 'panels'
-  },
-  {
-    title: 'Siga a trilha',
-    text: 'Dentro de cada painel, avance pelos pontos da trilha escaneando a imagem indicada em cada etapa.',
-    visual: 'trail',
-    trailStep: 1
-  },
-  {
-    title: 'Chegue ao final',
-    text: 'Continue seguindo os pontos até completar toda a trilha do painel e chegar na etapa final da marca.',
-    visual: 'trail',
-    trailStep: 3
-  },
-  {
-    title: 'Melhor posição',
-    html: 'Use o celular <strong class="phone-standing">EM PÉ</strong><span class="phone-orientation-guide" aria-hidden="true"><span class="phone-option phone-option-correct"><span class="phone-icon phone-icon-standing"></span><span class="phone-mark">✓</span><small>CERTO</small></span><span class="phone-option phone-option-wrong"><span class="phone-icon phone-icon-landscape"></span><span class="phone-mark">×</span><small>ERRADO</small></span></span>mantenha a imagem bem iluminada e mova a câmera devagar para a leitura ficar estável.',
-    visual: 'none'
-  }
-];
 
 function showWelcome() {
   var el = document.getElementById('ar-welcome');
   if (!el) return;
 
-  _welcomeStep = 0;
-  renderWelcomeStep();
   el.classList.remove('hidden');
 }
 
-function renderWelcomeStep() {
-  var step = welcomeSteps[_welcomeStep] || welcomeSteps[0];
-  var titleEl = document.getElementById('welcome-title');
-  var textEl = document.getElementById('welcome-text');
-  var labelEl = document.getElementById('welcome-step-label');
-  var dotsEl = document.getElementById('welcome-dots');
-  var btnEl = document.getElementById('welcome-next-btn');
-  var panelsEl = document.getElementById('welcome-panels-map');
-  var trailEl = document.getElementById('welcome-trail-map');
-
-  if (titleEl) titleEl.textContent = step.title;
-  if (textEl) {
-    if (step.html) textEl.innerHTML = step.html;
-    else textEl.textContent = step.text;
-  }
-  if (labelEl) labelEl.textContent = 'Passo ' + (_welcomeStep + 1) + ' de ' + welcomeSteps.length;
-  if (btnEl) btnEl.textContent = _welcomeStep === welcomeSteps.length - 1 ? 'Vamos lá' : 'Entendido';
-  if (panelsEl) panelsEl.classList.toggle('hidden', step.visual !== 'panels');
-  if (trailEl) {
-    if (step.visual === 'trail') {
-      var targetTrailStep = String(step.trailStep || 0);
-      var wasHidden = trailEl.classList.contains('hidden');
-      trailEl.classList.remove('hidden');
-      if (wasHidden) {
-        trailEl.dataset.step = '0';
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            trailEl.dataset.step = targetTrailStep;
-          });
-        });
-      } else {
-        trailEl.dataset.step = targetTrailStep;
-      }
-    } else {
-      trailEl.dataset.step = '0';
-      trailEl.classList.add('hidden');
-    }
-  }
-
-  if (dotsEl) {
-    dotsEl.innerHTML = '';
-    welcomeSteps.forEach(function (_, i) {
-      var dot = document.createElement('span');
-      dot.className = 'welcome-dot' + (i === _welcomeStep ? ' active' : '');
-      dotsEl.appendChild(dot);
-    });
-  }
-}
-
 function nextWelcomeStep() {
-  if (_welcomeStep < welcomeSteps.length - 1) {
-    _welcomeStep++;
-    renderWelcomeStep();
-    return;
-  }
-
   dismissWelcome();
 }
 

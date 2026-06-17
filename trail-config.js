@@ -36,7 +36,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 100,
-          "duration": 14000,
+          "duration": 3000,
           "words": [
             "Ecossistema",
             "Tecnologia",
@@ -51,58 +51,33 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "carousel3d",
+          "type": "image",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
-          "scratchEffect": true,
+          "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "title": "",
+          "image": "assets/images/painel-01/image-1-grupo-tsa-3-image.png",
+          "title": "POST",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 50,
-          "radius": 0.3,
-          "speed": 25,
-          "focusAnimation": false,
-          "focusScale": 2.15,
-          "focusY": 0.04,
-          "focusZ": 0.72,
-          "focusSpinDuration": 1200,
-          "focusHoldDuration": 900,
-          "itemWidth": 0.52,
-          "itemHeight": 0.68,
-          "cardBg": "#ffffff",
-          "itemTitleBg": "rgba(177,18,27,0.72)",
-          "itemTitleColor": "#ffffff",
-          "itemTitleFont": 38,
-          "modelSize": 0.46,
-          "y": 0.05,
-          "items": [
-            {
-              "name": "TSA",
-              "title": "TSA",
-              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-1-tsa.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "TSA Digital",
-              "title": "TSA Digital",
-              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-2-tsa-digital.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "Lynx Process",
-              "title": "Lynx Process",
-              "image": "assets/collections/painel-01/1-grupo-tsa-3-carousel3d-3-lynx-process.png",
-              "model": "",
-              "modelScale": ""
-            }
-          ]
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "pulse",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
         }
       ],
       "video": "",
@@ -170,14 +145,14 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Integração",
             "Tecnologia",
             "Antecipamos tendências"
           ],
           "animation": "vortex",
-          "layout": "row",
+          "layout": "diagonal",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -185,7 +160,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "videoPlayer",
+          "type": "image",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -194,20 +169,24 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "video": "videos/painel-01/video-2-marca-02-3-videoplayer.mp4",
-          "title": "",
+          "image": "",
+          "title": "BACKGROUND TEAMS",
           "width": 0.82,
           "height": 0.56,
           "x": 0,
           "y": 0.05,
           "z": 0.28,
-          "bg": "#000000",
+          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 38,
-          "floatAmount": 0.04,
-          "muted": true,
-          "loop": true
+          "interactions": [
+            "float",
+            "pulse",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
         }
       ],
       "video": "",
@@ -235,7 +214,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 1600,
-          "text": "Comunicação de lançamento",
+          "text": "Elementos da Marca",
           "x": 0,
           "y": 0,
           "width": 1.45,
@@ -253,7 +232,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Qualidade",
             "Tecnologia",
@@ -268,7 +247,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "model3d",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -277,9 +256,53 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "model": "",
-          "modelScale": "",
-          "spinSpeed": ""
+          "title": "",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "CORES",
+              "title": "CORES",
+              "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-1-cores.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "ELEMENTOS",
+              "title": "ELEMENTOS",
+              "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-2-elementos.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "MARCA",
+              "title": "MARCA",
+              "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-3-marca.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -287,7 +310,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "CORES",
+          "title": "CORES",
+          "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-1-cores.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "ELEMENTOS",
+          "title": "ELEMENTOS",
+          "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-2-elementos.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "MARCA",
+          "title": "MARCA",
+          "image": "assets/collections/painel-01/3-marca-03-3-carousel3d-3-marca.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 3,
@@ -325,16 +370,16 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Tecnologia",
             "Ecossistema",
             "Soluções"
           ],
-          "animation": "clickCollect",
-          "layout": "circle",
+          "animation": "vortex",
+          "layout": "grid",
           "backdropEffect": false,
-          "fireflyEffect": false,
+          "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
           "wordColor": "#ffffff",
           "wordFont": 56
@@ -353,10 +398,14 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
-          "radius": 0.3,
-          "speed": 50,
+          "animation": "stack",
+          "radius": 0.82,
+          "speed": 18,
           "focusAnimation": false,
-          "focusScale": 1.34,
+          "stackInterval": 1500,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
           "focusY": 0.04,
           "focusZ": 0.72,
           "focusSpinDuration": 1200,
@@ -366,21 +415,21 @@ window.TRAIL_CONFIG = {
           "cardBg": "#ffffff",
           "itemTitleBg": "rgba(177,18,27,0.72)",
           "itemTitleColor": "#ffffff",
-          "itemTitleFont": 45,
+          "itemTitleFont": 38,
           "modelSize": 0.46,
           "y": 0.05,
           "items": [
             {
-              "name": "Camisa",
-              "title": "Camisa TSA",
-              "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-1-camisa.png",
+              "name": "ASSINATURA",
+              "title": "ASSINATURA",
+              "image": "assets/collections/painel-01/4-marca-04-3-carousel3d-1-assinatura.png",
               "model": "",
               "modelScale": ""
             },
             {
-              "name": "Chaveiro",
-              "title": "Chaveiro TSA",
-              "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
+              "name": "CAPA POWERPOINT",
+              "title": "CAPA POWERPOINT",
+              "image": "assets/collections/painel-01/4-marca-04-3-carousel3d-2-capa-powerpoint.png",
               "model": "",
               "modelScale": ""
             }
@@ -394,16 +443,16 @@ window.TRAIL_CONFIG = {
       "spinSpeed": 45,
       "collection": [
         {
-          "name": "Camisa",
-          "title": "Camisa TSA",
-          "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-1-camisa.png",
+          "name": "ASSINATURA",
+          "title": "ASSINATURA",
+          "image": "assets/collections/painel-01/4-marca-04-3-carousel3d-1-assinatura.png",
           "model": "",
           "modelScale": ""
         },
         {
-          "name": "Chaveiro",
-          "title": "Chaveiro TSA",
-          "image": "assets/collections/painel-01/4-marca-04-2-carousel3d-2-chaveiro.png",
+          "name": "CAPA POWERPOINT",
+          "title": "CAPA POWERPOINT",
+          "image": "assets/collections/painel-01/4-marca-04-3-carousel3d-2-capa-powerpoint.png",
           "model": "",
           "modelScale": ""
         }
@@ -532,9 +581,9 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
-            "Manutençãointeligente",
+            "Manutenção inteligente",
             "Tecnologia",
             "Gestão de ativos"
           ],
@@ -619,7 +668,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Autônomos",
             "Otimização",
@@ -706,14 +755,14 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Consultoria",
             "Tecnologia",
             "Operação"
           ],
           "animation": "wave",
-          "layout": "row",
+          "layout": "column",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -734,9 +783,13 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
+          "animation": "orbit",
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
           "focusScale": 1.34,
           "focusY": 0.04,
           "focusZ": 0.72,
@@ -826,7 +879,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 7000,
+          "duration": 5000,
           "words": [
             "Confiabilidade",
             "Tecnologia",
@@ -914,16 +967,16 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Tecnologia",
             "Ecossistema",
             "Soluções"
           ],
-          "animation": "dragCenter",
+          "animation": "wave",
           "layout": "circle",
           "backdropEffect": false,
-          "fireflyEffect": false,
+          "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
           "wordColor": "#ffffff",
           "wordFont": 56
@@ -942,9 +995,13 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
+          "animation": "orbit",
           "radius": 0.6,
           "speed": 30,
           "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
           "focusScale": 1.34,
           "focusY": 0.04,
           "focusZ": 0.72,
@@ -1048,14 +1105,14 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Monitoramento",
             "Tecnologia",
             "Disponibilidade"
           ],
-          "animation": "spiral",
-          "layout": "circle",
+          "animation": "constellation",
+          "layout": "column",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -1076,9 +1133,13 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
+          "animation": "orbit",
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
           "focusScale": 1.34,
           "focusY": 0.04,
           "focusZ": 0.72,
@@ -1168,13 +1229,13 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Preditiva",
             "Tecnologia",
             "Produtividade"
           ],
-          "animation": "orbit",
+          "animation": "constellation",
           "layout": "grid",
           "backdropEffect": false,
           "fireflyEffect": true,
@@ -1255,16 +1316,16 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Tecnologia",
             "Ecossistema",
             "Soluções"
           ],
-          "animation": "scratchFind",
-          "layout": "circle",
+          "animation": "constellation",
+          "layout": "diagonal",
           "backdropEffect": false,
-          "fireflyEffect": false,
+          "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
           "wordColor": "#ffffff",
           "wordFont": 56
@@ -1283,9 +1344,13 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
+          "animation": "orbit",
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
           "focusScale": 1.34,
           "focusY": 0.04,
           "focusZ": 0.72,
@@ -1389,14 +1454,14 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Tecnologia",
             "Rastreabilidade",
             "Agilidade"
           ],
           "animation": "spiral",
-          "layout": "grid",
+          "layout": "column",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -1447,14 +1512,14 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Eficiência",
             "Tecnologia",
             "Sustentabilidade"
           ],
-          "animation": "vortex",
-          "layout": "circle",
+          "animation": "spiral",
+          "layout": "diagonal",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -1505,16 +1570,16 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 11200,
+          "duration": 5000,
           "words": [
             "Tecnologia",
             "Ecossistema",
             "Soluções"
           ],
-          "animation": "scratchFind",
-          "layout": "circle",
+          "animation": "spiral",
+          "layout": "grid",
           "backdropEffect": false,
-          "fireflyEffect": false,
+          "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
           "wordColor": "#ffffff",
           "wordFont": 56
@@ -1533,9 +1598,13 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
+          "animation": "orbit",
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
           "focusScale": 1.34,
           "focusY": 0.04,
           "focusZ": 0.72,
@@ -1602,6 +1671,58 @@ window.TRAIL_CONFIG = {
           "modelScale": ""
         }
       ]
+    },
+    {
+      "targetIndex": 16,
+      "panel": "Painel 01",
+      "trailStep": 5,
+      "feature": "custom",
+      "targetImage": "targets/source/painel-01/target-5-nova-ilha.png",
+      "name": "Nova ilha",
+      "steps": [
+        {
+          "type": "custom",
+          "order": 1,
+          "stepTitle": "GRUPO TSA",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": false,
+          "delay": 0,
+          "duration": 0
+        },
+        {
+          "type": "videoPlayer",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": true,
+          "delay": 0,
+          "duration": 0,
+          "video": "videos/painel-01/video-5-nova-ilha-2-videoplayer.mp4",
+          "title": "",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#000000",
+          "titleBg": "rgba(177,18,27,0.72)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "floatAmount": 0.04,
+          "muted": true,
+          "loop": true
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": []
     }
   ],
   "productTargetsData": [

@@ -940,9 +940,9 @@
         }
 
         var steps = config.steps || [];
-        if (titleEl) titleEl.textContent = config.title || 'Mini jogo';
-        if (textEl) textEl.textContent = config.text || 'Complete a interação para avançar.';
-        if (stepLabelEl) stepLabelEl.textContent = config.label || 'Desafio';
+        if (titleEl) titleEl.textContent = config.title || 'Interação com a marca';
+        if (textEl) textEl.textContent = config.text || 'Complete a interação com a marca para avançar.';
+        if (stepLabelEl) stepLabelEl.textContent = config.label || 'Interação com a marca';
         if (stepsEl) {
           stepsEl.innerHTML = steps.map(function (step, index) {
             return '<div class="mini-game-step"><strong>' + (index + 1) + '</strong><span>' + step + '</span></div>';
@@ -1300,8 +1300,8 @@
 
         this.showMiniGameIntro({
           label: 'Desafio',
-          title: 'Raspadinha das palavras',
-          text: 'Conclua o desafio raspando a tela ate encontrar todas as palavras.',
+          title: 'Interacao com a marca',
+          text: 'Conclua a interacao com a marca ate encontrar todas as palavras.',
           steps: [
             'Passe o dedo sobre a area onde as palavras aparecem.',
             'Cada palavra fica verde quando for revelada quase inteira.',
@@ -1518,61 +1518,30 @@
   <div id="ar-welcome" class="hidden">
     <div class="welcome-card">
       <p class="welcome-brand">TSA</p>
-      <p id="welcome-step-label" class="welcome-step-label">Passo 1 de 4</p>
-      <h2 id="welcome-title">Quatro paineis de marca</h2>
-      <p id="welcome-text">A experiencia e dividida em quatro paineis. Cada painel representa uma marca e funciona como uma trilha visual do inicio ao fim.</p>
-      <div id="welcome-panels-map" class="welcome-panels-map" aria-label="Quatro paineis de marca">
-        <div class="welcome-panel-card">
-          <span>PAINEL 01</span>
-          <strong>MARCA</strong>
-        </div>
-        <div class="welcome-panel-card">
-          <span>PAINEL 02</span>
-          <strong>MARCA</strong>
-        </div>
-        <div class="welcome-panel-card">
-          <span>PAINEL 03</span>
-          <strong>MARCA</strong>
-        </div>
-        <div class="welcome-panel-card">
-          <span>PAINEL 04</span>
-          <strong>MARCA</strong>
-        </div>
+      <h2 id="welcome-title">Posicione o celular</h2>
+      <p id="welcome-text">Use o celular <strong class="phone-standing">em pe</strong></p>
+      <div class="phone-orientation-guide" aria-hidden="true">
+        <span class="phone-option phone-option-correct">
+          <span class="phone-icon phone-icon-standing"></span>
+          <span class="phone-mark">OK</span>
+          <small>CERTO</small>
+        </span>
+        <span class="phone-option phone-option-wrong">
+          <span class="phone-icon phone-icon-landscape"></span>
+          <span class="phone-mark">X</span>
+          <small>ERRADO</small>
+        </span>
       </div>
-      <div id="welcome-trail-map" class="welcome-trail-map hidden" data-step="0" aria-label="Trilha de pontos para escanear">
-        <svg viewBox="0 0 720 360" role="img" aria-hidden="true">
-          <path class="trail-path-base" d="M74 292 C132 208 212 238 244 164 C286 72 398 82 430 156 C462 226 556 204 628 78" />
-          <path class="trail-path-progress" pathLength="100" d="M74 292 C132 208 212 238 244 164 C286 72 398 82 430 156 C462 226 556 204 628 78" />
-          <g class="trail-point trail-point-0" transform="translate(74 292)">
-            <circle r="26"></circle>
-            <text y="7">1</text>
-          </g>
-          <g class="trail-point trail-point-1" transform="translate(244 164)">
-            <circle r="26"></circle>
-            <text y="7">2</text>
-          </g>
-          <g class="trail-point trail-point-2" transform="translate(430 156)">
-            <circle r="26"></circle>
-            <text y="7">3</text>
-          </g>
-          <g class="trail-point trail-point-3" transform="translate(628 78)">
-            <circle r="26"></circle>
-            <text y="7">FIM</text>
-          </g>
-          <text class="trail-caption" x="360" y="334">avance escaneando cada ponto</text>
-        </svg>
-      </div>
-      <div id="welcome-dots" class="welcome-dots" aria-hidden="true"></div>
-      <button id="welcome-next-btn" onclick="nextWelcomeStep()">Entendido</button>
+      <button id="welcome-next-btn" onclick="nextWelcomeStep()">Comecar</button>
     </div>
   </div>
 
   <div id="mini-game-instructions" class="mini-game-overlay hidden">
     <div class="welcome-card">
-      <p class="welcome-brand">MINI JOGO</p>
-      <p id="mini-game-step-label" class="welcome-step-label">Como jogar</p>
+      <p class="welcome-brand">INTERACAO COM A MARCA</p>
+      <p id="mini-game-step-label" class="welcome-step-label">Interacao com a marca</p>
       <h2 id="mini-game-title">Prepare-se</h2>
-      <p id="mini-game-text">Complete a interação para avançar na trilha.</p>
+      <p id="mini-game-text">Complete a interação com a marca para avançar.</p>
       <div id="mini-game-steps" class="mini-game-steps"></div>
       <button id="mini-game-start-btn" type="button">Começar</button>
     </div>
@@ -1582,8 +1551,8 @@
     <div class="welcome-card mini-game-complete-card">
       <p class="welcome-brand">TSA</p>
       <div class="mini-game-complete-burst">✓</div>
-      <h2>Parabéns!</h2>
-      <p>Você concluiu o desafio e desbloqueou a próxima etapa da trilha.</p>
+      <h2>Concluído</h2>
+      <p>Acesse o conteúdo da marca.</p>
     </div>
   </div>
 
@@ -1599,7 +1568,7 @@
   <div id="scratch-reveal" class="hidden" aria-hidden="true">
     <canvas id="scratch-canvas"></canvas>
     <div class="scratch-copy">
-      <strong>Raspe para revelar</strong>
+      <strong>Interação com a marca</strong>
       <span>arraste o dedo pela tela</span>
     </div>
   </div>
