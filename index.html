@@ -928,7 +928,11 @@
       finishInteractiveWords: function () {
         this.clearDriftTimers();
         this._orbiting = false;
-        if (window.cancelScratchReveal) window.cancelScratchReveal();
+        if (window.completeScratchReveal) {
+          window.completeScratchReveal();
+        } else if (window.cancelScratchReveal) {
+          window.cancelScratchReveal();
+        }
         if (this._hintEl) {
           this._hintEl.setAttribute('visible', false);
         }
@@ -1561,12 +1565,8 @@
     <div class="splash-content">
       <span class="splash-icon">TSA</span>
       <h1>Tour TSA</h1>
-      <p>
-        Aponte a câmera do seu celular para os adesivos
-        espalhados pelo ambiente e aproveite as informações!
-      </p>
-      <button id="start-btn" onclick="startExperience()">
-        Iniciar Tour
+      <button id="start-btn" onclick="startExperience()" disabled>
+        Carregando...
       </button>
     </div>
   </div>
@@ -1577,12 +1577,12 @@
   <div id="ar-welcome" class="hidden">
     <div class="welcome-card">
       <p class="welcome-brand">TSA</p>
-      <h2 id="welcome-title">Posicione o celular</h2>
-      <p id="welcome-text">Use o celular <strong class="phone-standing">em pe</strong></p>
+      <h2 id="welcome-title">Instrução</h2>
+      <p id="welcome-text">Use o celular <strong class="phone-standing">na vertical</strong></p>
       <div class="phone-orientation-guide" aria-hidden="true">
         <span class="phone-option phone-option-correct">
           <span class="phone-icon phone-icon-standing"></span>
-          <span class="phone-mark">OK</span>
+          <span class="phone-mark">&#10003;</span>
           <small>CERTO</small>
         </span>
         <span class="phone-option phone-option-wrong">

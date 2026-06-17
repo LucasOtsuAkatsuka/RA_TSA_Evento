@@ -390,6 +390,7 @@ function featureEditorHtml(point) {
           fieldHtml('videoTitleColor', 'Cor do titulo', point.videoTitleColor || '#ffffff', 'text') +
           fieldHtml('videoTitleFont', 'Fonte do titulo', point.videoTitleFont || 38, 'number') +
           fieldHtml('videoFloatAmount', 'Intensidade da flutuacao', point.videoFloatAmount || 0.04, 'number', '0.01') +
+          pointCheckboxHtml('videoFireflyEffect', 'Ambiente escuro com video vagalume', point.videoFireflyEffect) +
           pointCheckboxHtml('videoMuted', 'Video sem som', point.videoMuted !== false) +
           pointCheckboxHtml('videoLoop', 'Repetir video', point.videoLoop !== false) +
         '</div>' +
@@ -430,6 +431,7 @@ function featureEditorHtml(point) {
           fieldHtml('carouselItemWidth', 'Largura dos cards', point.carouselItemWidth || 0.52, 'number', '0.01') +
           fieldHtml('carouselItemHeight', 'Altura dos cards', point.carouselItemHeight || 0.68, 'number', '0.01') +
           fieldHtml('carouselCardBg', 'Cor do fundo das imagens', point.carouselCardBg || '#ffffff', 'text') +
+          pointCheckboxHtml('carouselImageBackFace', 'Usar imagem frente e verso, sem fundo branco atras', point.carouselImageBackFace) +
           fieldHtml('carouselItemTitleBg', 'Cor do fundo das legendas', point.carouselItemTitleBg || 'rgba(177,18,27,0.72)', 'text') +
           fieldHtml('carouselItemTitleColor', 'Cor das legendas', point.carouselItemTitleColor || '#ffffff', 'text') +
           fieldHtml('carouselItemTitleFont', 'Tamanho da fonte das legendas', point.carouselItemTitleFont || 38, 'number') +
@@ -748,6 +750,7 @@ function stepEditorHtml(step, index) {
       stepFieldHtml(index, 'titleColor', 'Cor do titulo', step.titleColor || '#ffffff', 'text') +
       stepFieldHtml(index, 'titleFont', 'Fonte do titulo', valueOrDefault(step.titleFont, 38), 'number') +
       stepFieldHtml(index, 'floatAmount', 'Intensidade da flutuacao', valueOrDefault(step.floatAmount, 0.04), 'number', '0.01') +
+      stepCheckboxHtml(index, 'fireflyEffect', 'Ambiente escuro com video vagalume', step.fireflyEffect) +
       stepCheckboxHtml(index, 'muted', 'Video sem som', step.muted !== false) +
       stepCheckboxHtml(index, 'loop', 'Repetir video', step.loop !== false);
   } else if (type === 'carousel3d') {
@@ -772,6 +775,7 @@ function stepEditorHtml(step, index) {
       stepFieldHtml(index, 'itemWidth', 'Largura dos cards', valueOrDefault(step.itemWidth, 0.52), 'number', '0.01') +
       stepFieldHtml(index, 'itemHeight', 'Altura dos cards', valueOrDefault(step.itemHeight, 0.68), 'number', '0.01') +
       stepFieldHtml(index, 'cardBg', 'Cor do fundo das imagens', step.cardBg || '#ffffff', 'text') +
+      stepCheckboxHtml(index, 'imageBackFace', 'Usar imagem frente e verso, sem fundo branco atras', step.imageBackFace) +
       stepFieldHtml(index, 'itemTitleBg', 'Cor do fundo das legendas', step.itemTitleBg || 'rgba(177,18,27,0.72)', 'text') +
       stepFieldHtml(index, 'itemTitleColor', 'Cor das legendas', step.itemTitleColor || '#ffffff', 'text') +
       stepFieldHtml(index, 'itemTitleFont', 'Tamanho da fonte das legendas', valueOrDefault(step.itemTitleFont, 38), 'number') +
@@ -995,6 +999,7 @@ function defaultStep(type, order) {
       titleColor: '#ffffff',
       titleFont: 38,
       floatAmount: 0.04,
+      fireflyEffect: false,
       muted: true,
       loop: true
     };
@@ -1027,6 +1032,7 @@ function defaultStep(type, order) {
       itemWidth: 0.52,
       itemHeight: 0.68,
       cardBg: '#ffffff',
+      imageBackFace: false,
       itemTitleBg: 'rgba(177,18,27,0.72)',
       itemTitleColor: '#ffffff',
       itemTitleFont: 38,
@@ -1229,6 +1235,7 @@ function legacyStepsFromPoint(point) {
         titleColor: point.videoTitleColor || '#ffffff',
         titleFont: Number(point.videoTitleFont || 38),
         floatAmount: Number(point.videoFloatAmount || 0.04),
+        fireflyEffect: !!point.videoFireflyEffect,
         muted: point.videoMuted !== false,
         loop: point.videoLoop !== false
       }
@@ -1256,6 +1263,7 @@ function legacyStepsFromPoint(point) {
         itemWidth: Number(point.carouselItemWidth || 0.52),
         itemHeight: Number(point.carouselItemHeight || 0.68),
         cardBg: point.carouselCardBg || '#ffffff',
+        imageBackFace: !!point.carouselImageBackFace,
         itemTitleBg: point.carouselItemTitleBg || 'rgba(177,18,27,0.72)',
         itemTitleColor: point.carouselItemTitleColor || '#ffffff',
         itemTitleFont: Number(point.carouselItemTitleFont || 38),
@@ -1357,6 +1365,10 @@ function normalizeStepsForEditor(steps) {
       }
       if (clean.type === 'carousel3d') {
         clean.focusAnimation = clean.focusAnimation === true || clean.focusAnimation === 'true' || clean.focusAnimation === 1 || clean.focusAnimation === '1';
+        clean.imageBackFace = clean.imageBackFace === true || clean.imageBackFace === 'true' || clean.imageBackFace === 1 || clean.imageBackFace === '1';
+      }
+      if (clean.type === 'videoPlayer') {
+        clean.fireflyEffect = clean.fireflyEffect === true || clean.fireflyEffect === 'true' || clean.fireflyEffect === 1 || clean.fireflyEffect === '1';
       }
       return clean;
     })
@@ -2025,6 +2037,7 @@ function normalizePointForSave(point) {
     clean.videoTitleColor = point.videoTitleColor || '#ffffff';
     clean.videoTitleFont = Number(point.videoTitleFont || 38);
     clean.videoFloatAmount = Number(point.videoFloatAmount || 0.04);
+    clean.videoFireflyEffect = !!point.videoFireflyEffect;
     clean.videoMuted = point.videoMuted !== false;
     clean.videoLoop = point.videoLoop !== false;
   } else if (feature === 'site') {
@@ -2061,6 +2074,7 @@ function normalizePointForSave(point) {
     clean.carouselItemWidth = Number(point.carouselItemWidth || 0.52);
     clean.carouselItemHeight = Number(point.carouselItemHeight || 0.68);
     clean.carouselCardBg = point.carouselCardBg || '#ffffff';
+    clean.carouselImageBackFace = !!point.carouselImageBackFace;
     clean.carouselItemTitleBg = point.carouselItemTitleBg || 'rgba(177,18,27,0.72)';
     clean.carouselItemTitleColor = point.carouselItemTitleColor || '#ffffff';
     clean.carouselItemTitleFont = Number(point.carouselItemTitleFont || 38);
@@ -2159,6 +2173,7 @@ function normalizeStepsForSave(steps) {
       clean.titleColor = step.titleColor || '#ffffff';
       clean.titleFont = Number(valueOrDefault(step.titleFont, 38));
       clean.floatAmount = Number(valueOrDefault(step.floatAmount, 0.04));
+      clean.fireflyEffect = !!step.fireflyEffect;
       clean.muted = step.muted !== false;
       clean.loop = step.loop !== false;
     } else if (type === 'carousel3d') {
@@ -2181,6 +2196,7 @@ function normalizeStepsForSave(steps) {
       clean.itemWidth = Number(valueOrDefault(step.itemWidth, 0.52));
       clean.itemHeight = Number(valueOrDefault(step.itemHeight, 0.68));
       clean.cardBg = step.cardBg || '#ffffff';
+      clean.imageBackFace = !!step.imageBackFace;
       clean.itemTitleBg = step.itemTitleBg || 'rgba(177,18,27,0.72)';
       clean.itemTitleColor = step.itemTitleColor || '#ffffff';
       clean.itemTitleFont = Number(valueOrDefault(step.itemTitleFont, 38));

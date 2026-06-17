@@ -145,7 +145,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 5000,
+          "duration": 8000,
           "words": [
             "Integração",
             "Tecnologia",
@@ -214,7 +214,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 1600,
-          "text": "Elementos da Marca",
+          "text": "Assinatura",
           "x": 0,
           "y": 0,
           "width": 1.45,
@@ -232,7 +232,7 @@ window.TRAIL_CONFIG = {
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
-          "duration": 5000,
+          "duration": 7000,
           "words": [
             "Qualidade",
             "Tecnologia",
@@ -275,6 +275,7 @@ window.TRAIL_CONFIG = {
           "itemWidth": 0.52,
           "itemHeight": 0.68,
           "cardBg": "#ffffff",
+          "imageBackFace": true,
           "itemTitleBg": "rgba(177,18,27,0.72)",
           "itemTitleColor": "#ffffff",
           "itemTitleFont": 38,
@@ -377,7 +378,7 @@ window.TRAIL_CONFIG = {
             "Soluções"
           ],
           "animation": "vortex",
-          "layout": "grid",
+          "layout": "circle",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -402,7 +403,7 @@ window.TRAIL_CONFIG = {
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
-          "stackInterval": 3000,
+          "stackInterval": 5000,
           "stackDepth": 0.3,
           "stackOffsetY": 0.055,
           "focusScale": 2.15,
@@ -413,6 +414,7 @@ window.TRAIL_CONFIG = {
           "itemWidth": 0.52,
           "itemHeight": 0.68,
           "cardBg": "#ffffff",
+          "imageBackFace": true,
           "itemTitleBg": "rgba(177,18,27,0.72)",
           "itemTitleColor": "#ffffff",
           "itemTitleFont": 38,
@@ -509,33 +511,63 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
-          "scratchEffect": true,
+          "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/tsa/image-1-nova-ilha-3-image.png",
-          "title": "Modelos de posts",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
+          "title": "",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "04",
+              "title": "POST LINKEDIN",
+              "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-1-04.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Linkedin TSA",
+              "title": "CABEÇALHO",
+              "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-2-linkedin-tsa.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "02",
+              "title": "POST INSTAGRAM",
+              "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-3-02.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -543,7 +575,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "04",
+          "title": "POST LINKEDIN",
+          "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-1-04.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Linkedin TSA",
+          "title": "CABEÇALHO",
+          "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-2-linkedin-tsa.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "02",
+          "title": "POST INSTAGRAM",
+          "image": "assets/collections/tsa/1-nova-ilha-3-carousel3d-3-02.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 8,
@@ -596,7 +650,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -605,24 +659,54 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/digital/image-1-nova-ilha-3-image.png",
           "title": "",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "03",
+              "title": "POST INSTAGRAM",
+              "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-1-03.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "06",
+              "title": "POST LINKEDIN",
+              "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-2-06.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Linkedin 2",
+              "title": "CABEÇALHO",
+              "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-3-linkedin.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -630,7 +714,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "03",
+          "title": "POST INSTAGRAM",
+          "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-1-03.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "06",
+          "title": "POST LINKEDIN",
+          "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-2-06.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Linkedin 2",
+          "title": "CABEÇALHO",
+          "image": "assets/collections/digital/1-nova-ilha-3-carousel3d-3-linkedin.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 12,
@@ -655,7 +761,7 @@ window.TRAIL_CONFIG = {
           "y": 0,
           "width": 1.45,
           "height": 0.24,
-          "bg": "rgba(177,18,27,0.72)",
+          "bg": "rgba(0, 0, 255)",
           "color": "#ffffff",
           "font": 60
         },
@@ -683,7 +789,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -692,24 +798,54 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/lynx/image-1-nova-ilha-3-image.png",
-          "title": "Modelos de posts 2 (3D)",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
-          "titleBg": "rgba(177,18,27,0.72)",
+          "title": "",
+          "titleBg": "rgba(0, 0, 255)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(0, 0, 255)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "01",
+              "title": "POST INSTAGRAM",
+              "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-1-01.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "07",
+              "title": "POST LINKEDIN",
+              "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-2-07.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "LINKEDIN 4",
+              "title": "CABEÇALHO",
+              "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-3-linkedin-4.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -717,7 +853,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "01",
+          "title": "POST INSTAGRAM",
+          "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-1-01.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "07",
+          "title": "POST LINKEDIN",
+          "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-2-07.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "LINKEDIN 4",
+          "title": "CABEÇALHO",
+          "image": "assets/collections/lynx/1-nova-ilha-3-carousel3d-3-linkedin-4.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 5,
@@ -770,7 +928,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "carousel3d",
+          "type": "image",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -779,46 +937,24 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "title": "",
+          "image": "assets/images/tsa/image-2-nova-ilha-3-image.png",
+          "title": "BACKGROUND TEAMS",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 50,
-          "animation": "orbit",
-          "radius": 0.82,
-          "speed": 18,
-          "focusAnimation": false,
-          "stackInterval": 1700,
-          "stackDepth": 0.18,
-          "stackOffsetY": 0.055,
-          "focusScale": 1.34,
-          "focusY": 0.04,
-          "focusZ": 0.72,
-          "focusSpinDuration": 1200,
-          "focusHoldDuration": 900,
-          "itemWidth": 0.52,
-          "itemHeight": 0.68,
-          "cardBg": "#ffffff",
-          "itemTitleBg": "rgba(177,18,27,0.72)",
-          "itemTitleColor": "#ffffff",
-          "itemTitleFont": 38,
-          "modelSize": 0.46,
-          "y": 0.05,
-          "items": [
-            {
-              "name": "Wallpaper computador",
-              "title": "Wallpaper computador",
-              "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-1-wallpaper-computador.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "Fundo Teams",
-              "title": "Fundo Teams",
-              "image": "assets/collections/tsa/2-nova-ilha-3-carousel3d-2-fundo-teams.png",
-              "model": "",
-              "modelScale": ""
-            }
-          ]
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "pulse",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
         }
       ],
       "video": "",
@@ -861,7 +997,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 1600,
-          "text": "Comunicação de lançamento",
+          "text": "Elementos da Marca",
           "x": 0,
           "y": 0,
           "width": 1.45,
@@ -894,7 +1030,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -903,25 +1039,54 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/tsa/image-3-nova-ilha-3-image.png",
-          "title": "Móbiles de teto",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
+          "title": "",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "tilt",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "Cores",
+              "title": "CORES",
+              "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-1-cores.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Elementos",
+              "title": "ELEMENTOS",
+              "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-2-elementos.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "Logo",
+              "title": "LOGO",
+              "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-3-logo.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -929,7 +1094,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "Cores",
+          "title": "CORES",
+          "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-1-cores.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Elementos",
+          "title": "ELEMENTOS",
+          "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-2-elementos.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "Logo",
+          "title": "LOGO",
+          "image": "assets/collections/tsa/3-nova-ilha-3-carousel3d-3-logo.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 7,
@@ -995,7 +1182,7 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
-          "animation": "orbit",
+          "animation": "stack",
           "radius": 0.6,
           "speed": 30,
           "focusAnimation": false,
@@ -1010,6 +1197,7 @@ window.TRAIL_CONFIG = {
           "itemWidth": 0.52,
           "itemHeight": 0.68,
           "cardBg": "#ffffff",
+          "imageBackFace": false,
           "itemTitleBg": "rgba(177,18,27,0.72)",
           "itemTitleColor": "#ffffff",
           "itemTitleFont": 38,
@@ -1017,23 +1205,16 @@ window.TRAIL_CONFIG = {
           "y": 0.05,
           "items": [
             {
-              "name": "PPT",
-              "title": "PPT",
-              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-1-ppt.png",
+              "name": "Assinatura 02",
+              "title": "ASSINATURA",
+              "image": "assets/collections/tsa/4-nova-ilha-3-carousel3d-1-assinatura-02.png",
               "model": "",
               "modelScale": ""
             },
             {
-              "name": "Anúncios de revista",
-              "title": "Anúncios de revista",
-              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-2-anuncios-de-revista.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "Assinatura de e-mail ",
-              "title": "Assinatura de e-mail ",
-              "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-3-assinatura-de-e-mail.png",
+              "name": "CAPA POWERPOINT",
+              "title": "CAPA POWERPOINT",
+              "image": "assets/collections/tsa/4-nova-ilha-3-carousel3d-2-capa-powerpoint.png",
               "model": "",
               "modelScale": ""
             }
@@ -1047,23 +1228,16 @@ window.TRAIL_CONFIG = {
       "spinSpeed": 45,
       "collection": [
         {
-          "name": "PPT",
-          "title": "PPT",
-          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-1-ppt.png",
+          "name": "Assinatura 02",
+          "title": "ASSINATURA",
+          "image": "assets/collections/tsa/4-nova-ilha-3-carousel3d-1-assinatura-02.png",
           "model": "",
           "modelScale": ""
         },
         {
-          "name": "Anúncios de revista",
-          "title": "Anúncios de revista",
-          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-2-anuncios-de-revista.png",
-          "model": "",
-          "modelScale": ""
-        },
-        {
-          "name": "Assinatura de e-mail ",
-          "title": "Assinatura de e-mail ",
-          "image": "assets/collections/tsa/4-nova-ilha-2-carousel3d-3-assinatura-de-e-mail.png",
+          "name": "CAPA POWERPOINT",
+          "title": "CAPA POWERPOINT",
+          "image": "assets/collections/tsa/4-nova-ilha-3-carousel3d-2-capa-powerpoint.png",
           "model": "",
           "modelScale": ""
         }
@@ -1120,7 +1294,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "carousel3d",
+          "type": "image",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -1129,46 +1303,24 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "title": "",
+          "image": "assets/images/digital/image-2-nova-ilha-3-image.png",
+          "title": "BACKGROUND TEAMS",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 50,
-          "animation": "orbit",
-          "radius": 0.82,
-          "speed": 18,
-          "focusAnimation": false,
-          "stackInterval": 1700,
-          "stackDepth": 0.18,
-          "stackOffsetY": 0.055,
-          "focusScale": 1.34,
-          "focusY": 0.04,
-          "focusZ": 0.72,
-          "focusSpinDuration": 1200,
-          "focusHoldDuration": 900,
-          "itemWidth": 0.52,
-          "itemHeight": 0.68,
-          "cardBg": "#ffffff",
-          "itemTitleBg": "rgba(177,18,27,0.72)",
-          "itemTitleColor": "#ffffff",
-          "itemTitleFont": 38,
-          "modelSize": 0.46,
-          "y": 0.05,
-          "items": [
-            {
-              "name": "Wallpaper computador ",
-              "title": "Wallpaper computador ",
-              "image": "assets/collections/digital/2-nova-ilha-2-carousel3d-1-wallpaper-computador.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "Fundo Teams (3D)",
-              "title": "Fundo Teams (3D)",
-              "image": "assets/collections/digital/2-nova-ilha-2-carousel3d-2-fundo-teams-3d.png",
-              "model": "",
-              "modelScale": ""
-            }
-          ]
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "pulse",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
         }
       ],
       "video": "",
@@ -1236,7 +1388,7 @@ window.TRAIL_CONFIG = {
             "Produtividade"
           ],
           "animation": "constellation",
-          "layout": "grid",
+          "layout": "circle",
           "backdropEffect": false,
           "fireflyEffect": true,
           "wordBg": "rgba(177,18,27,0.72)",
@@ -1244,7 +1396,7 @@ window.TRAIL_CONFIG = {
           "wordFont": 56
         },
         {
-          "type": "image",
+          "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
           "stepTitleBg": "rgba(177,18,27,0.72)",
@@ -1253,24 +1405,54 @@ window.TRAIL_CONFIG = {
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
-          "image": "assets/images/digital/image-3-nova-ilha-2-image.png",
-          "title": "•\tMóbiles de teto (3D) – só DIGITAL frente e verso Grupo TSA",
-          "width": 0.82,
-          "height": 0.56,
-          "x": 0,
-          "y": 0.05,
-          "z": 0.28,
-          "bg": "#ffffff",
+          "title": "",
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
-          "titleFont": 38,
-          "interactions": [
-            "float",
-            "pulse",
-            "glow"
-          ],
-          "spinSpeed": 42,
-          "floatAmount": 0.06
+          "titleFont": 50,
+          "animation": "orbit",
+          "radius": 0.4,
+          "speed": 25,
+          "focusAnimation": false,
+          "stackInterval": 1700,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 2.15,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "CORES 2",
+              "title": "CORES",
+              "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-1-cores-2.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "ELEMENTOS",
+              "title": "ELEMENTOS 02",
+              "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-2-elementos.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "LOGO 2",
+              "title": "LOGO",
+              "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-3-logo-2.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
         }
       ],
       "video": "",
@@ -1278,7 +1460,29 @@ window.TRAIL_CONFIG = {
       "model": "",
       "modelScale": "0.55 0.55 0.55",
       "spinSpeed": 45,
-      "collection": []
+      "collection": [
+        {
+          "name": "CORES 2",
+          "title": "CORES",
+          "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-1-cores-2.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "ELEMENTOS",
+          "title": "ELEMENTOS 02",
+          "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-2-elementos.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "LOGO 2",
+          "title": "LOGO",
+          "image": "assets/collections/digital/3-nova-ilha-3-carousel3d-3-logo-2.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
     },
     {
       "targetIndex": 11,
@@ -1344,11 +1548,11 @@ window.TRAIL_CONFIG = {
           "titleBg": "rgba(177,18,27,0.72)",
           "titleColor": "#ffffff",
           "titleFont": 50,
-          "animation": "orbit",
+          "animation": "stack",
           "radius": 0.82,
           "speed": 18,
           "focusAnimation": false,
-          "stackInterval": 1700,
+          "stackInterval": 5000,
           "stackDepth": 0.18,
           "stackOffsetY": 0.055,
           "focusScale": 1.34,
@@ -1359,6 +1563,7 @@ window.TRAIL_CONFIG = {
           "itemWidth": 0.52,
           "itemHeight": 0.68,
           "cardBg": "#ffffff",
+          "imageBackFace": false,
           "itemTitleBg": "rgba(177,18,27,0.72)",
           "itemTitleColor": "#ffffff",
           "itemTitleFont": 38,
@@ -1366,23 +1571,16 @@ window.TRAIL_CONFIG = {
           "y": 0.05,
           "items": [
             {
-              "name": "PPT 2  (3D)",
-              "title": "PPT 2  (3D)",
-              "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-1-ppt-2-3d.png",
+              "name": "ASSINATURA 3",
+              "title": "ASSINATURA",
+              "image": "assets/collections/digital/4-nova-ilha-3-carousel3d-1-assinatura-3.png",
               "model": "",
               "modelScale": ""
             },
             {
-              "name": "Anúncios de revista 2 (3D)",
-              "title": "Anúncios de revista 2 (3D)",
-              "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-2-anuncios-de-revista-2-3d.png",
-              "model": "",
-              "modelScale": ""
-            },
-            {
-              "name": "Assinatura de e-mail 2 (3D)",
-              "title": "Assinatura de e-mail 2 (3D)",
-              "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-3-assinatura-de-e-mail-2-3d.png",
+              "name": "CAPA POWERPOINT 3",
+              "title": "CAPA POWERPOINT",
+              "image": "assets/collections/digital/4-nova-ilha-3-carousel3d-2-capa-powerpoint-3.png",
               "model": "",
               "modelScale": ""
             }
@@ -1396,23 +1594,16 @@ window.TRAIL_CONFIG = {
       "spinSpeed": 45,
       "collection": [
         {
-          "name": "PPT 2  (3D)",
-          "title": "PPT 2  (3D)",
-          "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-1-ppt-2-3d.png",
+          "name": "ASSINATURA 3",
+          "title": "ASSINATURA",
+          "image": "assets/collections/digital/4-nova-ilha-3-carousel3d-1-assinatura-3.png",
           "model": "",
           "modelScale": ""
         },
         {
-          "name": "Anúncios de revista 2 (3D)",
-          "title": "Anúncios de revista 2 (3D)",
-          "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-2-anuncios-de-revista-2-3d.png",
-          "model": "",
-          "modelScale": ""
-        },
-        {
-          "name": "Assinatura de e-mail 2 (3D)",
-          "title": "Assinatura de e-mail 2 (3D)",
-          "image": "assets/collections/digital/4-nova-ilha-1-carousel3d-3-assinatura-de-e-mail-2-3d.png",
+          "name": "CAPA POWERPOINT 3",
+          "title": "CAPA POWERPOINT",
+          "image": "assets/collections/digital/4-nova-ilha-3-carousel3d-2-capa-powerpoint-3.png",
           "model": "",
           "modelScale": ""
         }
@@ -1441,7 +1632,7 @@ window.TRAIL_CONFIG = {
           "y": 0,
           "width": 1.45,
           "height": 0.24,
-          "bg": "rgba(177,18,27,0.72)",
+          "bg": "rgba(0, 0, 255)",
           "color": "#ffffff",
           "font": 60
         },
@@ -1464,9 +1655,38 @@ window.TRAIL_CONFIG = {
           "layout": "column",
           "backdropEffect": false,
           "fireflyEffect": true,
-          "wordBg": "rgba(177,18,27,0.72)",
+          "wordBg": "rgba(0, 0, 255)",
           "wordColor": "#ffffff",
           "wordFont": 56
+        },
+        {
+          "type": "image",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(0, 0, 255)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": false,
+          "delay": 0,
+          "duration": 0,
+          "image": "assets/images/lynx/image-2-nova-ilha-3-image.png",
+          "title": "BACKGROUND",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#ffffff",
+          "titleBg": "rgba(0, 0, 255)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "interactions": [
+            "float",
+            "pulse",
+            "glow"
+          ],
+          "spinSpeed": 42,
+          "floatAmount": 0.06
         }
       ],
       "video": "",
@@ -1488,18 +1708,18 @@ window.TRAIL_CONFIG = {
           "type": "logoText",
           "order": 1,
           "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleBg": "rgba(0, 0, 255)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
           "duration": 1600,
-          "text": "Comunicação de lançamento",
+          "text": "Elementos da Marca",
           "x": 0,
           "y": 0,
           "width": 1.45,
           "height": 0.24,
-          "bg": "rgba(177,18,27,0.72)",
+          "bg": "rgba(0, 0, 255)",
           "color": "#ffffff",
           "font": 60
         },
@@ -1507,7 +1727,7 @@ window.TRAIL_CONFIG = {
           "type": "words",
           "order": 2,
           "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleBg": "rgba(0, 0, 255)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
           "scratchEffect": false,
@@ -1522,65 +1742,7 @@ window.TRAIL_CONFIG = {
           "layout": "diagonal",
           "backdropEffect": false,
           "fireflyEffect": true,
-          "wordBg": "rgba(177,18,27,0.72)",
-          "wordColor": "#ffffff",
-          "wordFont": 56
-        }
-      ],
-      "video": "",
-      "site": "",
-      "model": "",
-      "modelScale": "0.55 0.55 0.55",
-      "spinSpeed": 45,
-      "collection": []
-    },
-    {
-      "targetIndex": 15,
-      "panel": "LYNX",
-      "trailStep": 4,
-      "feature": "custom",
-      "targetImage": "targets/source/lynx/target-4-nova-ilha.png",
-      "name": "Nova ilha",
-      "steps": [
-        {
-          "type": "logoText",
-          "order": 1,
-          "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
-          "stepTitleColor": "#ffffff",
-          "stepTitleFont": 64,
-          "scratchEffect": false,
-          "delay": 0,
-          "duration": 1600,
-          "text": "Materiais Institucionais",
-          "x": 0,
-          "y": 0,
-          "width": 1.45,
-          "height": 0.24,
-          "bg": "rgba(177,18,27,0.72)",
-          "color": "#ffffff",
-          "font": 60
-        },
-        {
-          "type": "words",
-          "order": 2,
-          "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
-          "stepTitleColor": "#ffffff",
-          "stepTitleFont": 64,
-          "scratchEffect": false,
-          "delay": 0,
-          "duration": 5000,
-          "words": [
-            "Tecnologia",
-            "Ecossistema",
-            "Soluções"
-          ],
-          "animation": "spiral",
-          "layout": "grid",
-          "backdropEffect": false,
-          "fireflyEffect": true,
-          "wordBg": "rgba(177,18,27,0.72)",
+          "wordBg": "rgba(0, 0, 255)",
           "wordColor": "#ffffff",
           "wordFont": 56
         },
@@ -1588,24 +1750,24 @@ window.TRAIL_CONFIG = {
           "type": "carousel3d",
           "order": 3,
           "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleBg": "rgba(0, 0, 255)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
           "scratchEffect": false,
           "delay": 0,
           "duration": 0,
           "title": "",
-          "titleBg": "rgba(177,18,27,0.72)",
+          "titleBg": "rgba(0, 0, 255)",
           "titleColor": "#ffffff",
           "titleFont": 50,
           "animation": "orbit",
-          "radius": 0.82,
-          "speed": 18,
+          "radius": 0.4,
+          "speed": 25,
           "focusAnimation": false,
           "stackInterval": 1700,
           "stackDepth": 0.18,
           "stackOffsetY": 0.055,
-          "focusScale": 1.34,
+          "focusScale": 2.15,
           "focusY": 0.04,
           "focusZ": 0.72,
           "focusSpinDuration": 1200,
@@ -1613,30 +1775,31 @@ window.TRAIL_CONFIG = {
           "itemWidth": 0.52,
           "itemHeight": 0.68,
           "cardBg": "#ffffff",
-          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "imageBackFace": true,
+          "itemTitleBg": "rgba(0, 0, 255)",
           "itemTitleColor": "#ffffff",
           "itemTitleFont": 38,
           "modelSize": 0.46,
           "y": 0.05,
           "items": [
             {
-              "name": "PPT  3 (3D)",
-              "title": "PPT  3 (3D)",
-              "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-1-ppt-3-3d.png",
+              "name": "CORES 4",
+              "title": "CORES",
+              "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-1-cores-4.png",
               "model": "",
               "modelScale": ""
             },
             {
-              "name": "Anúncios de revista 3 (3D)",
-              "title": "Anúncios de revista 3 (3D)",
-              "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-2-anuncios-de-revista-3-3d.png",
+              "name": "ELEMENTOS 4",
+              "title": "ELEMENTOS",
+              "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-2-elementos-4.png",
               "model": "",
               "modelScale": ""
             },
             {
-              "name": " Assinatura de e-mail 3",
-              "title": " Assinatura de e-mail 3",
-              "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-3-assinatura-de-e-mail-3.png",
+              "name": "LOGO 4",
+              "title": "LOGO",
+              "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-3-logo-4.png",
               "model": "",
               "modelScale": ""
             }
@@ -1650,23 +1813,148 @@ window.TRAIL_CONFIG = {
       "spinSpeed": 45,
       "collection": [
         {
-          "name": "PPT  3 (3D)",
-          "title": "PPT  3 (3D)",
-          "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-1-ppt-3-3d.png",
+          "name": "CORES 4",
+          "title": "CORES",
+          "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-1-cores-4.png",
           "model": "",
           "modelScale": ""
         },
         {
-          "name": "Anúncios de revista 3 (3D)",
-          "title": "Anúncios de revista 3 (3D)",
-          "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-2-anuncios-de-revista-3-3d.png",
+          "name": "ELEMENTOS 4",
+          "title": "ELEMENTOS",
+          "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-2-elementos-4.png",
           "model": "",
           "modelScale": ""
         },
         {
-          "name": " Assinatura de e-mail 3",
-          "title": " Assinatura de e-mail 3",
-          "image": "assets/collections/lynx/4-nova-ilha-1-carousel3d-3-assinatura-de-e-mail-3.png",
+          "name": "LOGO 4",
+          "title": "LOGO",
+          "image": "assets/collections/lynx/3-nova-ilha-3-carousel3d-3-logo-4.png",
+          "model": "",
+          "modelScale": ""
+        }
+      ]
+    },
+    {
+      "targetIndex": 15,
+      "panel": "LYNX",
+      "trailStep": 4,
+      "feature": "custom",
+      "targetImage": "targets/source/lynx/target-4-nova-ilha.png",
+      "name": "Nova ilha",
+      "steps": [
+        {
+          "type": "logoText",
+          "order": 1,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(0, 0, 255)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": false,
+          "delay": 0,
+          "duration": 1600,
+          "text": "Materiais Institucionais",
+          "x": 0,
+          "y": 0,
+          "width": 1.45,
+          "height": 0.24,
+          "bg": "rgba(0, 0, 255)",
+          "color": "#ffffff",
+          "font": 60
+        },
+        {
+          "type": "words",
+          "order": 2,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(0, 0, 255)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": false,
+          "delay": 0,
+          "duration": 5000,
+          "words": [
+            "Tecnologia",
+            "Ecossistema",
+            "Soluções"
+          ],
+          "animation": "spiral",
+          "layout": "circle",
+          "backdropEffect": false,
+          "fireflyEffect": true,
+          "wordBg": "rgba(0, 0, 255)",
+          "wordColor": "#ffffff",
+          "wordFont": 56
+        },
+        {
+          "type": "carousel3d",
+          "order": 3,
+          "stepTitle": "",
+          "stepTitleBg": "rgba(0, 0, 255)",
+          "stepTitleColor": "#ffffff",
+          "stepTitleFont": 64,
+          "scratchEffect": false,
+          "delay": 0,
+          "duration": 0,
+          "title": "",
+          "titleBg": "rgba(0, 0, 255)",
+          "titleColor": "#ffffff",
+          "titleFont": 50,
+          "animation": "stack",
+          "radius": 0.82,
+          "speed": 18,
+          "focusAnimation": false,
+          "stackInterval": 5000,
+          "stackDepth": 0.18,
+          "stackOffsetY": 0.055,
+          "focusScale": 1.34,
+          "focusY": 0.04,
+          "focusZ": 0.72,
+          "focusSpinDuration": 1200,
+          "focusHoldDuration": 900,
+          "itemWidth": 0.52,
+          "itemHeight": 0.68,
+          "cardBg": "#ffffff",
+          "imageBackFace": false,
+          "itemTitleBg": "rgba(177,18,27,0.72)",
+          "itemTitleColor": "#ffffff",
+          "itemTitleFont": 38,
+          "modelSize": 0.46,
+          "y": 0.05,
+          "items": [
+            {
+              "name": "ASSINATURA 4",
+              "title": "ASSINATURA",
+              "image": "assets/collections/lynx/4-nova-ilha-3-carousel3d-1-assinatura-4.png",
+              "model": "",
+              "modelScale": ""
+            },
+            {
+              "name": "CAPA POWERPOINT 4",
+              "title": "CAPA POWERPOINT",
+              "image": "assets/collections/lynx/4-nova-ilha-3-carousel3d-2-capa-powerpoint-4.png",
+              "model": "",
+              "modelScale": ""
+            }
+          ]
+        }
+      ],
+      "video": "",
+      "site": "",
+      "model": "",
+      "modelScale": "0.55 0.55 0.55",
+      "spinSpeed": 45,
+      "collection": [
+        {
+          "name": "ASSINATURA 4",
+          "title": "ASSINATURA",
+          "image": "assets/collections/lynx/4-nova-ilha-3-carousel3d-1-assinatura-4.png",
+          "model": "",
+          "modelScale": ""
+        },
+        {
+          "name": "CAPA POWERPOINT 4",
+          "title": "CAPA POWERPOINT",
+          "image": "assets/collections/lynx/4-nova-ilha-3-carousel3d-2-capa-powerpoint-4.png",
           "model": "",
           "modelScale": ""
         }
@@ -1709,7 +1997,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": true,
           "delay": 0,
           "duration": 0,
-          "video": "videos/painel-01/video-5-nova-ilha-2-videoplayer.mp4",
+          "video": "videos/painel-01/video-5-ilha-2-videoplayer.mp4",
           "title": "",
           "width": 0.82,
           "height": 0.56,
@@ -1721,6 +2009,7 @@ window.TRAIL_CONFIG = {
           "titleColor": "#ffffff",
           "titleFont": 38,
           "floatAmount": 0.04,
+          "fireflyEffect": true,
           "muted": true,
           "loop": true
         }
@@ -1769,7 +2058,7 @@ window.TRAIL_CONFIG = {
           "scratchEffect": true,
           "delay": 0,
           "duration": 0,
-          "video": "videos/tsa/video-5-nova-ilha-1-videoplayer.mp4",
+          "video": "videos/tsa/video-5-nova-ilha-2-videoplayer.mp4",
           "title": "",
           "width": 0.82,
           "height": 0.56,
@@ -1781,6 +2070,7 @@ window.TRAIL_CONFIG = {
           "titleColor": "#ffffff",
           "titleFont": 38,
           "floatAmount": 0.04,
+          "fireflyEffect": true,
           "muted": true,
           "loop": true
         }
@@ -1841,6 +2131,7 @@ window.TRAIL_CONFIG = {
           "titleColor": "#ffffff",
           "titleFont": 38,
           "floatAmount": 0.04,
+          "fireflyEffect": true,
           "muted": true,
           "loop": true
         }
@@ -1864,7 +2155,7 @@ window.TRAIL_CONFIG = {
           "type": "logoText",
           "order": 1,
           "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleBg": "rgba(0, 0, 255)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
           "scratchEffect": false,
@@ -1875,22 +2166,35 @@ window.TRAIL_CONFIG = {
           "y": 0,
           "width": 1.45,
           "height": 0.24,
-          "bg": "rgba(177,18,27,0.72)",
+          "bg": "rgba(0, 0, 255)",
           "color": "#ffffff",
           "font": 60
         },
         {
-          "type": "video",
+          "type": "videoPlayer",
           "order": 2,
           "stepTitle": "",
-          "stepTitleBg": "rgba(177,18,27,0.72)",
+          "stepTitleBg": "rgba(0, 0, 255)",
           "stepTitleColor": "#ffffff",
           "stepTitleFont": 64,
           "scratchEffect": true,
           "delay": 0,
           "duration": 0,
-          "cta": "",
-          "video": "videos/lynx/video-5-nova-ilha-2-video.mp4"
+          "video": "videos/lynx/video-5-nova-ilha-2-videoplayer.mp4",
+          "title": "",
+          "width": 0.82,
+          "height": 0.56,
+          "x": 0,
+          "y": 0.05,
+          "z": 0.28,
+          "bg": "#000000",
+          "titleBg": "rgba(0, 0, 255)",
+          "titleColor": "#ffffff",
+          "titleFont": 38,
+          "floatAmount": 0.04,
+          "fireflyEffect": true,
+          "muted": true,
+          "loop": true
         }
       ],
       "video": "videos/lynx/video-5-nova-ilha-2-video.mp4",

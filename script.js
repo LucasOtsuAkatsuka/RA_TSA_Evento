@@ -138,6 +138,7 @@ const productTargetsData = (window.TRAIL_CONFIG && Array.isArray(window.TRAIL_CO
 // ================================================================
 var isModalOpen      = false;   // verdadeiro enquanto qualquer modal estiver aberto
 var arStarted        = false;   // garante que startMindar() rode apenas uma vez
+var arStarting       = false;   // evita clique duplo enquanto o MindAR esta preparando
 var lastClickTime    = 0;       // usado para debounce dos botões AR
 
 // estado do carrossel
@@ -151,6 +152,8 @@ var assetCacheVersion   = Date.now();
 var imageGlowTextureUrl = '';
 var imageAspectCache    = {};
 var videoAspectCache    = {};
+var preloadedImageAssets = {};
+var preloadedVideoAssets = {};
 
 function withAssetCacheBuster(src) {
   if (!src) return '';
@@ -259,13 +262,113 @@ function getVideoNaturalAspect(src, callback) {
   video.src = withAssetCacheBuster(src);
 }
 
+function preloadImageAsset(src) {
+  if (!src || preloadedImageAssets[src]) return;
+
+  var img = new Image();
+  preloadedImageAssets[src] = img;
+  img.decoding = 'async';
+  img.src = withAssetCacheBuster(src);
+}
+
+function whenImageAssetReady(src, callback) {
+  if (!src) {
+    callback(false);
+    return;
+  }
+
+  preloadImageAsset(src);
+
+  var img = preloadedImageAssets[src];
+  if (!img) {
+    callback(false);
+    return;
+  }
+
+  var finished = false;
+  function done(ok) {
+    if (finished) return;
+    finished = true;
+    callback(ok !== false);
+  }
+
+  function decodeThenDone() {
+    if (img.decode && img.naturalWidth) {
+      img.decode().then(function () {
+        done(true);
+      }).catch(function () {
+        done(true);
+      });
+      return;
+    }
+    done(!!img.naturalWidth);
+  }
+
+  if (img.complete) {
+    decodeThenDone();
+    return;
+  }
+
+  img.addEventListener('load', decodeThenDone, { once: true });
+  img.addEventListener('error', function () {
+    done(false);
+  }, { once: true });
+}
+
+function preloadVideoAsset(src) {
+  if (!src || preloadedVideoAssets[src]) return;
+
+  var video = document.createElement('video');
+  preloadedVideoAssets[src] = video;
+  video.className = 'ar-video-source';
+  video.preload = 'auto';
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+  video.setAttribute('crossorigin', 'anonymous');
+  video.src = withAssetCacheBuster(src);
+  video.load();
+}
+
+function collectStepPreloadAssets(step, brandData) {
+  var assets = { images: [], videos: [] };
+  var type = step && step.type;
+
+  if (type === 'image') {
+    assets.images.push(step.image || (brandData && brandData.image) || '');
+  }
+
+  if (type === 'videoPlayer') {
+    assets.videos.push(step.video || (brandData && brandData.video) || '');
+  }
+
+  if (type === 'carousel3d') {
+    normalizeCarouselPreloadItems((step && step.items) || (brandData && brandData.collection) || []).forEach(function (item) {
+      if (item.image) assets.images.push(item.image);
+    });
+  }
+
+  return assets;
+}
+
+function normalizeCarouselPreloadItems(items) {
+  return (Array.isArray(items) ? items : [])
+    .map(function (item) {
+      if (typeof item === 'string') return { image: item, model: '' };
+      return {
+        image: item && item.image ? item.image : '',
+        model: item && item.model ? item.model : ''
+      };
+    })
+    .filter(function (item) { return item.image || item.model; });
+}
+
 var scratchRevealState = null;
+var scratchRevealExitState = null;
 
-function cancelScratchReveal() {
-  if (!scratchRevealState) return;
-
-  var state = scratchRevealState;
-  scratchRevealState = null;
+function detachScratchRevealState(state) {
+  if (!state) return;
 
   window.removeEventListener('resize', state.resize);
   state.canvas.removeEventListener('pointerdown', state.pointerDown);
@@ -273,10 +376,74 @@ function cancelScratchReveal() {
   window.removeEventListener('pointerup', state.pointerUp);
   window.removeEventListener('pointercancel', state.pointerUp);
 
+  if (state.exitTimer) clearTimeout(state.exitTimer);
+  if (state.onExitEnd) state.overlay.removeEventListener('animationend', state.onExitEnd);
+}
+
+function hideScratchRevealNow(state) {
+  if (!state) return;
+
+  state.overlay.classList.remove('is-exiting');
   state.overlay.classList.add('hidden');
   state.overlay.setAttribute('aria-hidden', 'true');
   if (state.handHint) state.handHint.classList.add('is-hidden');
   state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+}
+
+function clearScratchRevealExit(hide) {
+  if (!scratchRevealExitState) return;
+
+  var state = scratchRevealExitState;
+  scratchRevealExitState = null;
+
+  if (state.exitTimer) clearTimeout(state.exitTimer);
+  if (state.onExitEnd) state.overlay.removeEventListener('animationend', state.onExitEnd);
+  state.canvas.style.pointerEvents = '';
+  state.overlay.classList.remove('is-exiting');
+  if (hide) hideScratchRevealNow(state);
+}
+
+function completeScratchReveal(done) {
+  if (!scratchRevealState) return;
+
+  var state = scratchRevealState;
+  scratchRevealState = null;
+  clearScratchRevealExit(false);
+
+  detachScratchRevealState(state);
+  if (state.handHint) state.handHint.classList.add('is-hidden');
+  state.overlay.classList.add('is-exiting');
+  state.overlay.setAttribute('aria-hidden', 'true');
+  state.canvas.style.pointerEvents = 'none';
+  scratchRevealExitState = state;
+
+  state.onExitEnd = function (event) {
+    if (event && event.target !== state.overlay) return;
+    if (state.exitTimer) clearTimeout(state.exitTimer);
+    state.overlay.removeEventListener('animationend', state.onExitEnd);
+    scratchRevealExitState = scratchRevealExitState === state ? null : scratchRevealExitState;
+    state.canvas.style.pointerEvents = '';
+    hideScratchRevealNow(state);
+    if (typeof done === 'function') done();
+  };
+
+  state.exitTimer = setTimeout(function () {
+    state.onExitEnd();
+  }, 720);
+
+  state.overlay.addEventListener('animationend', state.onExitEnd);
+}
+
+function cancelScratchReveal() {
+  clearScratchRevealExit(true);
+  if (!scratchRevealState) return;
+
+  var state = scratchRevealState;
+  scratchRevealState = null;
+
+  detachScratchRevealState(state);
+  state.canvas.style.pointerEvents = '';
+  hideScratchRevealNow(state);
 }
 
 function startScratchReveal(options, done) {
@@ -390,10 +557,7 @@ function startScratchReveal(options, done) {
   function complete() {
     if (completed) return;
     completed = true;
-    overlay.classList.add('hidden');
-    overlay.setAttribute('aria-hidden', 'true');
-    cancelScratchReveal();
-    done();
+    completeScratchReveal(done);
   }
 
   function maybeComplete(force) {
@@ -440,8 +604,10 @@ function startScratchReveal(options, done) {
 
   resize();
   if (handHint) handHint.classList.remove('is-hidden');
+  overlay.classList.remove('is-exiting');
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
+  canvas.style.pointerEvents = '';
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointermove', pointerMove);
   window.addEventListener('pointerup', pointerUp);
@@ -451,6 +617,7 @@ function startScratchReveal(options, done) {
 
 window.startScratchReveal = startScratchReveal;
 window.cancelScratchReveal = cancelScratchReveal;
+window.completeScratchReveal = completeScratchReveal;
 
 // ================================================================
 //  GERACAO MODULAR DOS TARGETS AR
@@ -618,6 +785,7 @@ function getIslandSteps(item) {
         titleColor: item.videoTitleColor || '#ffffff',
         titleFont: Number(item.videoTitleFont || 38),
         floatAmount: Number(item.videoFloatAmount || 0.04),
+        fireflyEffect: !!item.videoFireflyEffect,
         muted: item.videoMuted !== false,
         loop: item.videoLoop !== false
       }
@@ -646,6 +814,7 @@ function getIslandSteps(item) {
         titleColor: item.carouselTitleColor || '#ffffff',
         titleFont: Number(item.carouselTitleFont || 50),
         cardBg: item.carouselCardBg || '#ffffff',
+        imageBackFace: !!item.carouselImageBackFace,
         itemTitleBg: item.carouselItemTitleBg || 'rgba(177,18,27,0.72)',
         itemTitleColor: item.carouselItemTitleColor || '#ffffff',
         itemTitleFont: Number(item.carouselItemTitleFont || 38)
@@ -788,7 +957,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="image-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-image-content" adaptive-scale="factor:0.78; min:0.9; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-image-content" adaptive-scale="factor:0.90; min:1.5; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-image-card">' +
           '<a-entity class="ar-image-spin">' +
             '<a-plane class="ar-image-glow" width="1.18" height="0.92" position="0 0 0.006" opacity="0.82" material="shader:flat; transparent:true; depthWrite:false; side:double" visible="false"></a-plane>' +
@@ -801,7 +970,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="video-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-video-content" adaptive-scale="factor:0.78; min:0.9; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-video-content" adaptive-scale="factor:0.90; min:1.5; max:2.7; screen:350; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-video-card">' +
           '<a-plane class="ar-video-bg" width="0.82" height="0.56" position="0 0 0.012" color="#000000" material="shader:flat; side:double"></a-plane>' +
           '<a-plane class="ar-video-plane" width="0.82" height="0.56" position="0 0 0.02" material="shader:flat; transparent:true; side:front"></a-plane>' +
@@ -811,7 +980,7 @@ function createTrailTarget(brand, dataIndex) {
     '</a-entity>' +
 
     '<a-entity id="carousel-showcase-' + dataIndex + '" visible="false" position="0 0.05 0.28" scale="0.001 0.001 0.001">' +
-      '<a-entity class="ar-carousel-content" adaptive-scale="factor:0.74; min:0.88; max:2.6; screen:340; lerp:0.08; deadband:0.014">' +
+      '<a-entity class="ar-carousel-content" adaptive-scale="factor:0.74; min:1.5; max:2.6; screen:340; lerp:0.08; deadband:0.014">' +
         '<a-entity class="ar-carousel-stage"></a-entity>' +
         '<a-entity class="ar-carousel-title" hud-label="text:; width:1.35; height:0.2; bg:#b1121b; color:#ffffff; font:38; variant:glass" position="0 -0.72 0" visible="false"></a-entity>' +
       '</a-entity>' +
@@ -886,12 +1055,44 @@ function registerARButtonListeners() {
 document.addEventListener('DOMContentLoaded', function () {
   buildARTargets();
   registerARButtonListeners();
+  prepareStartButton();
 });
 
 // ================================================================
 //  TELA INICIAL → INICIAR TOUR
 // ================================================================
+function prepareStartButton() {
+  var sceneEl = document.getElementById('ar-scene');
+  var startBtn = document.getElementById('start-btn');
+  if (!sceneEl || !startBtn) return;
+
+  startBtn.disabled = true;
+  startBtn.textContent = 'Carregando...';
+
+  function enableStart() {
+    if (arStarted || arStarting) return;
+    startBtn.disabled = false;
+    startBtn.textContent = 'Iniciar Tour';
+  }
+
+  if (sceneEl.hasLoaded) {
+    setTimeout(enableStart, 120);
+  } else {
+    sceneEl.addEventListener('loaded', function () {
+      setTimeout(enableStart, 120);
+    }, { once: true });
+  }
+}
+
 function startExperience() {
+  if (arStarted || arStarting) return;
+
+  var startBtn = document.getElementById('start-btn');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.textContent = 'Iniciando...';
+  }
+
   document.getElementById('splash-screen').classList.add('hidden');
 
   var hint = document.getElementById('ar-hint');
@@ -905,9 +1106,9 @@ function startExperience() {
 //  INICIALIZAR MINDAR (polling para evitar condição de corrida)
 // ================================================================
 function startMindar() {
-  if (arStarted) return;
+  if (arStarted || arStarting) return;
   buildARTargets();
-  arStarted = true;
+  arStarting = true;
 
   var sceneEl = document.getElementById('ar-scene');
   sceneEl.setAttribute('mindar-image', 'imageTargetSrc', withAssetCacheBuster('./targets/targets.mind'));
@@ -919,6 +1120,7 @@ function startMindar() {
   });
 
   sceneEl.addEventListener('arError', function () {
+    arStarting = false;
     document.getElementById('ar-hint').classList.add('hidden');
     showErrorMessage(
       'Não foi possível iniciar a câmera.\n\n' +
@@ -930,15 +1132,23 @@ function startMindar() {
   });
 
   var attempts    = 0;
-  var MAX_ATTEMPTS = 50; // 5 segundos
+  var MAX_ATTEMPTS = 80; // 8 segundos
 
   function tryStart() {
-    var arSystem = sceneEl.systems['mindar-image-system'];
-    if (arSystem) {
+    var arSystem = sceneEl.systems && sceneEl.systems['mindar-image-system'];
+    if (sceneEl.hasLoaded && arSystem && typeof arSystem.start === 'function') {
       try {
         registerTargetAnimations();
         arSystem.start();
+        arStarted = true;
+        arStarting = false;
       } catch (err) {
+        if (attempts < MAX_ATTEMPTS && /showLoading|undefined|not ready/i.test(String(err && err.message))) {
+          attempts++;
+          setTimeout(tryStart, 120);
+          return;
+        }
+        arStarting = false;
         console.error('[WebAR] arSystem.start() falhou:', err);
         showErrorMessage('Erro ao iniciar AR:\n' + err.message);
       }
@@ -946,6 +1156,7 @@ function startMindar() {
       attempts++;
       setTimeout(tryStart, 100);
     } else {
+      arStarting = false;
       document.getElementById('ar-hint').querySelector('span').textContent =
         '❌ Erro — recarregue a página';
     }
@@ -1005,11 +1216,15 @@ function registerTargetAnimations() {
     var carouselFocusFrame = null;
     var carouselFocusState = null;
     var carouselStackFrame = null;
+    var carouselStackStartTimer = null;
     var carouselStackState = null;
     var videoSourceEl = null;
+    var videoLoopFrame = null;
+    var videoLoopResetting = false;
     var phraseTypingTimer = null;
     var wordBackdropTimer = null;
     var wordBackdropFrame = null;
+    var videoFireflyFrame = null;
     var fireflyWorldPos = new THREE.Vector3();
     var fireflyWorldScale = new THREE.Vector3();
     var sequenceTimers = [];
@@ -1085,6 +1300,7 @@ function registerTargetAnimations() {
       if (scanEl)   scanEl.setAttribute('visible', false);
       cancelScratchReveal();
       clearWordBackdrop(false);
+      clearVideoFireflyBackdrop(false);
       if (darkOverlay) darkOverlay.classList.add('hidden');
       if (darkOverlay) darkOverlay.classList.remove('image-glow-backdrop');
       if (modelShowcaseEl) modelShowcaseEl.setAttribute('visible', false);
@@ -1126,6 +1342,9 @@ function registerTargetAnimations() {
       if (videoTitleEl) videoTitleEl.setAttribute('visible', false);
       if (videoSourceEl) {
         try {
+          stopSmoothVideoLoop();
+          videoSourceEl.onloadeddata = null;
+          videoSourceEl.oncanplay = null;
           videoSourceEl.pause();
           videoSourceEl.currentTime = 0;
         } catch (err) {
@@ -1347,6 +1566,31 @@ function registerTargetAnimations() {
       return value === true || value === 'true' || value === 1 || value === '1' || value === 'on';
     }
 
+    function preloadConfiguredMedia(configuredSteps, startIndex) {
+      var brandData = brandsData[idx] || {};
+      (configuredSteps || []).slice(Math.max(0, startIndex || 0)).forEach(function (step) {
+        var assets = collectStepPreloadAssets(step, brandData);
+        assets.images.forEach(preloadImageAsset);
+        assets.videos.forEach(preloadVideoAsset);
+      });
+    }
+
+    function revealWithWarmup(el, animationName, animationValue, onReady) {
+      if (!el || cancelled) return;
+
+      el.setAttribute('visible', true);
+      el.setAttribute('scale', '0.001 0.001 0.001');
+
+      var warmupTimer = setTimeout(function () {
+        if (cancelled || !el) return;
+        if (animationName && animationValue) {
+          el.setAttribute(animationName, animationValue);
+        }
+        if (typeof onReady === 'function') onReady();
+      }, 50);
+      sequenceTimers.push(warmupTimer);
+    }
+
     function clearWordBackdrop(keepVisible) {
       if (wordBackdropTimer) {
         clearTimeout(wordBackdropTimer);
@@ -1368,6 +1612,140 @@ function registerTargetAnimations() {
       darkOverlay.style.removeProperty('--firefly-x3');
       darkOverlay.style.removeProperty('--firefly-y3');
       if (!keepVisible) darkOverlay.classList.add('hidden');
+    }
+
+    function clearVideoFireflyBackdrop(keepVisible) {
+      if (videoFireflyFrame) {
+        cancelAnimationFrame(videoFireflyFrame);
+        videoFireflyFrame = null;
+      }
+      if (!darkOverlay) return;
+      darkOverlay.classList.remove('video-firefly-backdrop');
+      darkOverlay.style.removeProperty('--firefly-x1');
+      darkOverlay.style.removeProperty('--firefly-y1');
+      darkOverlay.style.removeProperty('--firefly-x2');
+      darkOverlay.style.removeProperty('--firefly-y2');
+      darkOverlay.style.removeProperty('--firefly-x3');
+      darkOverlay.style.removeProperty('--firefly-y3');
+      if (!keepVisible) darkOverlay.classList.add('hidden');
+    }
+
+    function stopSmoothVideoLoop() {
+      if (videoLoopFrame) {
+        cancelAnimationFrame(videoLoopFrame);
+        videoLoopFrame = null;
+      }
+      videoLoopResetting = false;
+      if (videoSourceEl) videoSourceEl.onended = null;
+    }
+
+    function seekVideoToStart(videoEl) {
+      if (!videoEl) return;
+      var startOffset = 0.035;
+      try {
+        if (typeof videoEl.fastSeek === 'function') {
+          videoEl.fastSeek(startOffset);
+        } else {
+          videoEl.currentTime = startOffset;
+        }
+      } catch (err) {
+        try {
+          videoEl.currentTime = 0;
+        } catch (seekErr) {
+          console.warn('[WebAR] Nao foi possivel reiniciar o video AR:', seekErr);
+        }
+      }
+    }
+
+    function playVideoIfNeeded(videoEl) {
+      if (!videoEl || videoEl.paused === false) return;
+      var playPromise = videoEl.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(function (err) {
+          console.warn('[WebAR] Autoplay do video AR bloqueado:', err);
+        });
+      }
+    }
+
+    function startSmoothVideoLoop(videoEl, shouldLoop) {
+      stopSmoothVideoLoop();
+      if (!videoEl) return;
+
+      videoEl.loop = false;
+      if (!shouldLoop) return;
+
+      videoEl.onended = function () {
+        seekVideoToStart(videoEl);
+        playVideoIfNeeded(videoEl);
+      };
+
+      function tick() {
+        if (cancelled || !videoEl || !videoSourceEl || videoEl.src !== videoSourceEl.src) {
+          videoLoopFrame = null;
+          return;
+        }
+
+        var duration = Number(videoEl.duration || 0);
+        if (isFinite(duration) && duration > 0.25 && !videoEl.paused && !videoLoopResetting) {
+          var loopMargin = Math.min(0.22, Math.max(0.07, duration * 0.045));
+          if (videoEl.currentTime >= duration - loopMargin) {
+            videoLoopResetting = true;
+            seekVideoToStart(videoEl);
+            playVideoIfNeeded(videoEl);
+            setTimeout(function () {
+              videoLoopResetting = false;
+            }, 180);
+          }
+        }
+
+        videoLoopFrame = requestAnimationFrame(tick);
+      }
+
+      videoLoopFrame = requestAnimationFrame(tick);
+    }
+
+    function updateVideoFireflyMask() {
+      if (!darkOverlay || !darkOverlay.classList.contains('video-firefly-backdrop') || cancelled || !videoPlaneEl) {
+        videoFireflyFrame = null;
+        return;
+      }
+
+      var sceneEl = document.getElementById('ar-scene');
+      var camera = sceneEl && sceneEl.camera;
+      if (!camera || !videoPlaneEl.object3D || !videoPlaneEl.object3D.visible) {
+        videoFireflyFrame = requestAnimationFrame(updateVideoFireflyMask);
+        return;
+      }
+
+      videoPlaneEl.object3D.getWorldPosition(fireflyWorldPos);
+      fireflyWorldPos.project(camera);
+
+      if (fireflyWorldPos.z < -1 || fireflyWorldPos.z > 1) {
+        for (var i = 1; i <= 3; i++) {
+          darkOverlay.style.setProperty('--firefly-x' + i, '-200%');
+          darkOverlay.style.setProperty('--firefly-y' + i, '-200%');
+        }
+      } else {
+        var x = Math.max(0, Math.min(100, (fireflyWorldPos.x * 0.5 + 0.5) * 100));
+        var y = Math.max(0, Math.min(100, (-fireflyWorldPos.y * 0.5 + 0.5) * 100));
+        darkOverlay.style.setProperty('--firefly-x1', x.toFixed(2) + '%');
+        darkOverlay.style.setProperty('--firefly-y1', y.toFixed(2) + '%');
+        darkOverlay.style.setProperty('--firefly-x2', Math.max(0, x - 8).toFixed(2) + '%');
+        darkOverlay.style.setProperty('--firefly-y2', y.toFixed(2) + '%');
+        darkOverlay.style.setProperty('--firefly-x3', Math.min(100, x + 8).toFixed(2) + '%');
+        darkOverlay.style.setProperty('--firefly-y3', y.toFixed(2) + '%');
+      }
+
+      videoFireflyFrame = requestAnimationFrame(updateVideoFireflyMask);
+    }
+
+    function startVideoFireflyBackdrop() {
+      if (!darkOverlay) return;
+      clearWordBackdrop(true);
+      clearVideoFireflyBackdrop(true);
+      darkOverlay.classList.remove('hidden');
+      darkOverlay.classList.add('video-firefly-backdrop');
+      updateVideoFireflyMask();
     }
 
     function updateFireflyMask() {
@@ -1426,6 +1804,7 @@ function registerTargetAnimations() {
       if (!useReveal && !useFirefly) return;
 
       var duration = Number(options.backdropDuration || options.duration || 5600);
+      clearVideoFireflyBackdrop(false);
       clearWordBackdrop(false);
       darkOverlay.style.setProperty('--word-backdrop-duration', duration + 'ms');
       darkOverlay.classList.remove('hidden');
@@ -1720,21 +2099,28 @@ function registerTargetAnimations() {
       var width = Number(options.itemWidth || 0.52);
       var height = Number(options.itemHeight || 0.68);
       var cardBg = options.cardBg || '#ffffff';
+      var useImageBackFace = !!options.imageBackFace;
+      var isStack = (options.animation || 'orbit') === 'stack';
       var angle = (Math.PI * 2 * index) / Math.max(total, 1);
       var angleDeg = THREE.MathUtils.radToDeg(angle);
       var x = Math.sin(angle) * radius;
       var z = Math.cos(angle) * radius;
       var card = document.createElement('a-entity');
 
-      card.setAttribute('position', x + ' 0 ' + z);
-      card.setAttribute('rotation', '0 ' + angleDeg + ' 0');
-      card.setAttribute('scale', '0.001 0.001 0.001');
+      card.setAttribute('position', isStack ? '0 0 0' : x + ' 0 ' + z);
+      card.setAttribute('rotation', isStack ? '0 0 0' : '0 ' + angleDeg + ' 0');
+      card.setAttribute('scale', isStack ? '1 1 1' : '0.001 0.001 0.001');
+      if (isStack) card.setAttribute('visible', false);
       card.dataset.carouselIndex = String(index);
       card.dataset.basePosition = x + ' 0 ' + z;
       card.dataset.baseRotation = '0 ' + angleDeg + ' 0';
-      card.setAttribute('animation__in',
-        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:420; delay:' +
-        (index * 90) + '; easing:easeOutBack');
+      card.dataset.stackReady = isStack && !item.model && item.image ? 'false' : 'true';
+      card.dataset.mediaReady = !item.model && item.image ? 'false' : 'true';
+      if (!isStack) {
+        card.setAttribute('animation__in',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:420; delay:' +
+          (index * 90) + '; easing:easeOutBack');
+      }
 
       if (item.model) {
         var model = document.createElement('a-gltf-model');
@@ -1746,17 +2132,34 @@ function registerTargetAnimations() {
         model.setAttribute('continuous-spin', 'axis:y; speed:' + Number(item.spinSpeed || options.itemSpinSpeed || 28));
         card.appendChild(model);
       } else {
-        var backing = document.createElement('a-plane');
-        backing.setAttribute('position', '0 0 0.018');
-        backing.setAttribute('width', width);
-        backing.setAttribute('height', height);
-        backing.setAttribute('material', {
-          shader: 'flat',
-          color: cardBg,
-          transparent: false,
-          side: 'double'
-        });
-        card.appendChild(backing);
+        var backing = null;
+        var backPlane = null;
+        if (useImageBackFace && item.image) {
+          backPlane = document.createElement('a-plane');
+          backPlane.setAttribute('position', '0 0 0.012');
+          backPlane.setAttribute('rotation', '0 180 0');
+          backPlane.setAttribute('width', width);
+          backPlane.setAttribute('height', height);
+          backPlane.setAttribute('material', {
+            shader: 'flat',
+            src: withAssetCacheBuster(item.image),
+            transparent: true,
+            side: 'front'
+          });
+          card.appendChild(backPlane);
+        } else {
+          backing = document.createElement('a-plane');
+          backing.setAttribute('position', '0 0 0.018');
+          backing.setAttribute('width', width);
+          backing.setAttribute('height', height);
+          backing.setAttribute('material', {
+            shader: 'flat',
+            color: cardBg,
+            transparent: false,
+            side: 'double'
+          });
+          card.appendChild(backing);
+        }
 
         var plane = document.createElement('a-plane');
         plane.setAttribute('position', '0 0 0.025');
@@ -1774,18 +2177,30 @@ function registerTargetAnimations() {
       var label = makeCarouselLabel(item, options, width, height);
       if (label) card.appendChild(label);
 
-      if (!item.model && item.image && plane && backing) {
+      if (!item.model && item.image && plane) {
         getImageNaturalAspect(item.image, function (aspect) {
           if (cancelled || !card.parentNode) return;
           var naturalSize = sizeFromNaturalAspect(aspect, width, height);
-          backing.setAttribute('width', naturalSize.width);
-          backing.setAttribute('height', naturalSize.height);
+          if (backing) {
+            backing.setAttribute('width', naturalSize.width);
+            backing.setAttribute('height', naturalSize.height);
+          }
+          if (backPlane) {
+            backPlane.setAttribute('width', naturalSize.width);
+            backPlane.setAttribute('height', naturalSize.height);
+          }
           plane.setAttribute('width', naturalSize.width);
           plane.setAttribute('height', naturalSize.height);
           if (label) {
             label.setAttribute('position', '0 ' + (-(naturalSize.height / 2) - 0.12) + ' 0.06');
             label.setAttribute('hud-label', 'width', Number(options.itemTitleWidth || Math.max(naturalSize.width, 0.68)));
           }
+          whenImageAssetReady(item.image, function () {
+            if (cancelled || !card.parentNode) return;
+            card.dataset.stackReady = 'true';
+            card.dataset.mediaReady = 'true';
+            card.emit('carousel-card-ready');
+          });
         });
       }
 
@@ -1810,6 +2225,10 @@ function registerTargetAnimations() {
     }
 
     function stopCarouselStack() {
+      if (carouselStackStartTimer) {
+        clearTimeout(carouselStackStartTimer);
+        carouselStackStartTimer = null;
+      }
       if (carouselStackFrame) {
         cancelAnimationFrame(carouselStackFrame);
         carouselStackFrame = null;
@@ -1826,14 +2245,19 @@ function registerTargetAnimations() {
         labelEl.setAttribute('visible', labelVisible === true);
       });
       if (cardEl.object3D) {
-        cardEl.object3D.renderOrder = Math.round((z + 2) * 1000);
+        cardEl.object3D.renderOrder = 0;
         cardEl.object3D.traverse(function (child) {
-          child.renderOrder = cardEl.object3D.renderOrder;
+          child.renderOrder = 0;
+          var materials = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : [];
+          materials.forEach(function (material) {
+            material.depthWrite = true;
+            material.needsUpdate = true;
+          });
         });
       }
     }
 
-    function startCarouselStack(items, options) {
+    function startCarouselStack(items, options, startDelay) {
       stopCarouselStack();
       if (!carouselStageEl || !items.length) return;
 
@@ -1883,6 +2307,13 @@ function registerTargetAnimations() {
           showLabel
         );
       }
+
+      // Monta a pilha imediatamente no estado inicial para evitar o salto
+      // entre o layout circular de criação e o primeiro frame da animação.
+      cards.forEach(function (cardEl, index) {
+        var initialOrder = index % total;
+        placeAtLayer(cardEl, initialOrder);
+      });
 
       function tick(time) {
         if (!carouselStackState || cancelled || !carouselStageEl) {
@@ -1936,7 +2367,16 @@ function registerTargetAnimations() {
         carouselStackFrame = requestAnimationFrame(tick);
       }
 
-      carouselStackFrame = requestAnimationFrame(tick);
+      if (startDelay && startDelay > 0) {
+        carouselStackStartTimer = setTimeout(function () {
+          carouselStackStartTimer = null;
+          if (!carouselStackState || cancelled) return;
+          carouselStackFrame = requestAnimationFrame(tick);
+        }, startDelay);
+        sequenceTimers.push(carouselStackStartTimer);
+      } else {
+        carouselStackFrame = requestAnimationFrame(tick);
+      }
     }
 
     function easeInOutCubic(t) {
@@ -1947,6 +2387,7 @@ function registerTargetAnimations() {
       var width = Number(options.itemWidth || 0.52);
       var height = Number(options.itemHeight || 0.68);
       var cardBg = options.cardBg || '#ffffff';
+      var useImageBackFace = !!options.imageBackFace;
       var card = document.createElement('a-entity');
 
       card.classList.add('ar-carousel-focus-card');
@@ -1964,17 +2405,34 @@ function registerTargetAnimations() {
         model.setAttribute('continuous-spin', 'axis:y; speed:' + Number(item.spinSpeed || options.itemSpinSpeed || 20));
         card.appendChild(model);
       } else {
-        var backing = document.createElement('a-plane');
-        backing.setAttribute('position', '0 0 0.018');
-        backing.setAttribute('width', width);
-        backing.setAttribute('height', height);
-        backing.setAttribute('material', {
-          shader: 'flat',
-          color: cardBg,
-          transparent: false,
-          side: 'double'
-        });
-        card.appendChild(backing);
+        var backing = null;
+        var backPlane = null;
+        if (useImageBackFace && item.image) {
+          backPlane = document.createElement('a-plane');
+          backPlane.setAttribute('position', '0 0 0.012');
+          backPlane.setAttribute('rotation', '0 180 0');
+          backPlane.setAttribute('width', width);
+          backPlane.setAttribute('height', height);
+          backPlane.setAttribute('material', {
+            shader: 'flat',
+            src: withAssetCacheBuster(item.image),
+            transparent: true,
+            side: 'front'
+          });
+          card.appendChild(backPlane);
+        } else {
+          backing = document.createElement('a-plane');
+          backing.setAttribute('position', '0 0 0.018');
+          backing.setAttribute('width', width);
+          backing.setAttribute('height', height);
+          backing.setAttribute('material', {
+            shader: 'flat',
+            color: cardBg,
+            transparent: false,
+            side: 'double'
+          });
+          card.appendChild(backing);
+        }
 
         var plane = document.createElement('a-plane');
         plane.setAttribute('position', '0 0 0.025');
@@ -1992,12 +2450,18 @@ function registerTargetAnimations() {
       var label = makeCarouselLabel(item, options, width, height);
       if (label) card.appendChild(label);
 
-      if (!item.model && item.image && plane && backing) {
+      if (!item.model && item.image && plane) {
         getImageNaturalAspect(item.image, function (aspect) {
           if (cancelled || !card.parentNode) return;
           var naturalSize = sizeFromNaturalAspect(aspect, width, height);
-          backing.setAttribute('width', naturalSize.width);
-          backing.setAttribute('height', naturalSize.height);
+          if (backing) {
+            backing.setAttribute('width', naturalSize.width);
+            backing.setAttribute('height', naturalSize.height);
+          }
+          if (backPlane) {
+            backPlane.setAttribute('width', naturalSize.width);
+            backPlane.setAttribute('height', naturalSize.height);
+          }
           plane.setAttribute('width', naturalSize.width);
           plane.setAttribute('height', naturalSize.height);
           if (label) {
@@ -2151,6 +2615,7 @@ function registerTargetAnimations() {
 
     function hideVideoShowcase() {
       if (!videoShowcaseEl || cancelled) return;
+      clearVideoFireflyBackdrop(false);
       videoShowcaseEl.removeAttribute('animation__float');
       videoShowcaseEl.setAttribute('animation__out',
         'property:scale; from:1 1 1; to:0.001 0.001 0.001; dur:220; easing:easeInBack');
@@ -2160,6 +2625,9 @@ function registerTargetAnimations() {
         videoShowcaseEl.removeAttribute('animation__out');
         if (videoSourceEl) {
           try {
+            stopSmoothVideoLoop();
+            videoSourceEl.onloadeddata = null;
+            videoSourceEl.oncanplay = null;
             videoSourceEl.pause();
             videoSourceEl.currentTime = 0;
           } catch (err) {
@@ -2219,7 +2687,7 @@ function registerTargetAnimations() {
       imageShowcaseEl.removeAttribute('animation__out');
       imageShowcaseEl.setAttribute('position', x + ' ' + y + ' ' + z);
       imageShowcaseEl.setAttribute('scale', '0.001 0.001 0.001');
-      imageShowcaseEl.setAttribute('visible', true);
+      imageShowcaseEl.setAttribute('visible', false);
 
       if (imageCardEl) {
         imageCardEl.removeAttribute('animation__pulse');
@@ -2257,13 +2725,6 @@ function registerTargetAnimations() {
         }
       }
 
-      imagePlaneEl.setAttribute('material', {
-        shader: 'flat',
-        src: withAssetCacheBuster(src),
-        transparent: true,
-        side: 'front'
-      });
-
       if (imageTitleEl) {
         var title = options.title || brandData.imageTitle || '';
         imageTitleEl.setAttribute('hud-label', 'text', title);
@@ -2273,14 +2734,34 @@ function registerTargetAnimations() {
         imageTitleEl.setAttribute('visible', !!title);
       }
 
-      getImageNaturalAspect(src, function (aspect) {
-        if (cancelled || !imageShowcaseEl || imageShowcaseEl.getAttribute('visible') === false) return;
-        var naturalSize = sizeFromNaturalAspect(aspect, width, height);
-        applyImageShowcaseSize(naturalSize.width, naturalSize.height);
-      });
+      var imageRevealed = false;
+      var revealImageShowcase = function () {
+        if (imageRevealed || cancelled || !imageShowcaseEl) return;
+        imageRevealed = true;
+        revealWithWarmup(
+          imageShowcaseEl,
+          'animation__pop',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack'
+        );
+      };
 
-      imageShowcaseEl.setAttribute('animation__pop',
-        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack');
+      whenImageAssetReady(src, function () {
+        if (cancelled || !imageShowcaseEl) return;
+
+        imagePlaneEl.setAttribute('material', {
+          shader: 'flat',
+          src: withAssetCacheBuster(src),
+          transparent: true,
+          side: 'front'
+        });
+
+        getImageNaturalAspect(src, function (aspect) {
+          if (cancelled || !imageShowcaseEl) return;
+          var naturalSize = sizeFromNaturalAspect(aspect, width, height);
+          applyImageShowcaseSize(naturalSize.width, naturalSize.height);
+          revealImageShowcase();
+        });
+      });
 
       if (hasInteraction('float')) {
         var floatAmount = isFinite(Number(options.floatAmount)) ? Number(options.floatAmount) : Number(brandData.imageFloatAmount || 0.06);
@@ -2321,9 +2802,14 @@ function registerTargetAnimations() {
       var bg = options.bg || brandData.videoBg || '#000000';
       var floatAmount = isFinite(Number(options.floatAmount)) ? Number(options.floatAmount) : Number(brandData.videoFloatAmount || 0.04);
       var previewOnly = options.previewOnly === true;
+      var configuredVideoFirefly = options.fireflyEffect !== undefined ? options.fireflyEffect : brandData.videoFireflyEffect;
+      var useVideoFirefly = !previewOnly && isOptionEnabled(configuredVideoFirefly);
       var sourceEl = ensureVideoSourceEl();
       var sourceId = '#' + sourceEl.id;
       var resolvedSrc = withAssetCacheBuster(src);
+      var shouldLoopVideo = options.loop !== false;
+      var videoPlaybackStarted = false;
+      var videoReadyHandled = false;
 
       function applyVideoShowcaseSize(nextWidth, nextHeight) {
         width = nextWidth;
@@ -2351,7 +2837,7 @@ function registerTargetAnimations() {
       videoShowcaseEl.removeAttribute('animation__out');
       videoShowcaseEl.setAttribute('position', x + ' ' + y + ' ' + z);
       videoShowcaseEl.setAttribute('scale', wasVisible ? '1 1 1' : '0.001 0.001 0.001');
-      videoShowcaseEl.setAttribute('visible', true);
+      videoShowcaseEl.setAttribute('visible', wasVisible);
       applyVideoShowcaseSize(width, height);
 
       if (videoTitleEl) {
@@ -2363,9 +2849,12 @@ function registerTargetAnimations() {
         videoTitleEl.setAttribute('visible', !!title);
       }
 
+      stopSmoothVideoLoop();
+      sourceEl.onloadeddata = null;
+      sourceEl.oncanplay = null;
       sourceEl.pause();
       sourceEl.muted = options.muted !== false;
-      sourceEl.loop = options.loop !== false;
+      sourceEl.loop = false;
       sourceEl.playsInline = true;
       sourceEl.src = resolvedSrc;
       sourceEl.load();
@@ -2377,37 +2866,78 @@ function registerTargetAnimations() {
         side: 'front'
       });
 
-      getVideoNaturalAspect(src, function (aspect) {
-        if (cancelled || !videoShowcaseEl || videoShowcaseEl.getAttribute('visible') === false) return;
-        var naturalSize = sizeFromNaturalAspect(aspect, width, height);
-        applyVideoShowcaseSize(naturalSize.width, naturalSize.height);
-      });
+      if (videoAspectCache[src]) {
+        var cachedVideoSize = sizeFromNaturalAspect(videoAspectCache[src], width, height);
+        applyVideoShowcaseSize(cachedVideoSize.width, cachedVideoSize.height);
+      }
 
-      var tryPlay = function () {
-        if (cancelled || !videoShowcaseEl || videoShowcaseEl.getAttribute('visible') === false) return;
-        if (previewOnly) {
-          try {
-            sourceEl.pause();
-            sourceEl.currentTime = 0;
-          } catch (err) {
-            console.warn('[WebAR] Nao foi possivel preparar preview do video:', err);
-          }
+      var videoRevealed = wasVisible;
+      var revealVideoShowcase = function (onReady) {
+        if (cancelled || !videoShowcaseEl) return;
+        if (videoRevealed) {
+          if (typeof onReady === 'function') onReady();
           return;
         }
-        var playPromise = sourceEl.play();
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(function (err) {
-            console.warn('[WebAR] Autoplay do video AR bloqueado:', err);
-          });
+        videoRevealed = true;
+        if (useVideoFirefly) startVideoFireflyBackdrop();
+        revealWithWarmup(
+          videoShowcaseEl,
+          'animation__pop',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack',
+          onReady
+        );
+      };
+      if (useVideoFirefly && wasVisible) {
+        startVideoFireflyBackdrop();
+      } else if (!useVideoFirefly) {
+        clearVideoFireflyBackdrop(false);
+      }
+
+      var tryPlay = function () {
+        if (cancelled || !videoShowcaseEl) return;
+        if (videoReadyHandled) return;
+        videoReadyHandled = true;
+
+        if (sourceEl.videoWidth && sourceEl.videoHeight) {
+          videoAspectCache[src] = sourceEl.videoWidth / sourceEl.videoHeight;
+          var sourceVideoSize = sizeFromNaturalAspect(videoAspectCache[src], width, height);
+          applyVideoShowcaseSize(sourceVideoSize.width, sourceVideoSize.height);
         }
+
+        revealVideoShowcase(function () {
+          if (cancelled || !videoShowcaseEl) return;
+
+          if (previewOnly) {
+            try {
+              stopSmoothVideoLoop();
+              sourceEl.pause();
+              sourceEl.currentTime = 0;
+            } catch (err) {
+              console.warn('[WebAR] Nao foi possivel preparar preview do video:', err);
+            }
+            return;
+          }
+
+          var playPromise = sourceEl.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(function (err) {
+              console.warn('[WebAR] Autoplay do video AR bloqueado:', err);
+            });
+          }
+          if (!videoPlaybackStarted) {
+            videoPlaybackStarted = true;
+            startSmoothVideoLoop(sourceEl, shouldLoopVideo);
+          }
+        });
       };
       sourceEl.onloadeddata = tryPlay;
       sourceEl.oncanplay = tryPlay;
 
-      if (!wasVisible) {
-        videoShowcaseEl.setAttribute('animation__pop',
-          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:480; easing:easeOutBack');
+      if (sourceEl.readyState >= 2) {
+        var videoReadyTimer = setTimeout(tryPlay, 0);
+        sequenceTimers.push(videoReadyTimer);
       }
+
       videoShowcaseEl.setAttribute('animation__float',
         'property:position; from:' + x + ' ' + y + ' ' + z + '; to:' + x + ' ' + (y + floatAmount) + ' ' + z +
         '; dir:alternate; dur:1900; loop:true; easing:easeInOutSine');
@@ -2416,6 +2946,7 @@ function registerTargetAnimations() {
         var previewTimer = setTimeout(function () {
           if (cancelled || !sourceEl || !videoShowcaseEl || videoShowcaseEl.getAttribute('visible') === false) return;
           try {
+            stopSmoothVideoLoop();
             sourceEl.pause();
             sourceEl.currentTime = 0;
           } catch (err) {
@@ -2437,6 +2968,16 @@ function registerTargetAnimations() {
         return;
       }
 
+      var carouselAnimation = options.animation || brandData.carouselAnimation || 'orbit';
+      var isStackCarousel = carouselAnimation === 'stack';
+      options.animation = carouselAnimation;
+
+      carouselShowcaseEl.setAttribute('visible', false);
+      carouselShowcaseEl.removeAttribute('animation__pop');
+      carouselShowcaseEl.removeAttribute('animation__float');
+      carouselShowcaseEl.setAttribute('scale', isStackCarousel ? '1 1 1' : '0.001 0.001 0.001');
+      carouselStageEl.setAttribute('visible', false);
+
       while (carouselStageEl.firstChild) {
         carouselStageEl.removeChild(carouselStageEl.firstChild);
       }
@@ -2449,8 +2990,8 @@ function registerTargetAnimations() {
         carouselStageEl.appendChild(createCarouselCard(item, index, items.length, options));
       });
 
-      if ((options.animation || brandData.carouselAnimation || 'orbit') === 'stack') {
-        startCarouselStack(items, options);
+      if (isStackCarousel) {
+        startCarouselStack(items, options, 0);
       } else if (isOptionEnabled(options.focusAnimation || brandData.carouselFocusAnimation)) {
         carouselStageEl.removeAttribute('continuous-spin');
         var focusStartTimer = setTimeout(function () {
@@ -2471,12 +3012,44 @@ function registerTargetAnimations() {
       }
 
       carouselShowcaseEl.setAttribute('position', '0 ' + Number(options.y || 0.05) + ' 0.28');
-      carouselShowcaseEl.setAttribute('visible', true);
-      carouselShowcaseEl.setAttribute('animation__pop',
-        'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:520; easing:easeOutBack');
-      carouselShowcaseEl.setAttribute('animation__float',
-        'property:position; from:0 ' + Number(options.y || 0.05) + ' 0.28; to:0 ' +
-        (Number(options.y || 0.05) + 0.055) + ' 0.28; dir:alternate; dur:2100; loop:true; easing:easeInOutSine');
+      carouselShowcaseEl.removeAttribute('animation__pop');
+      carouselShowcaseEl.removeAttribute('animation__float');
+
+      var carouselCards = Array.from(carouselStageEl.children);
+      var carouselRevealed = false;
+      var revealCarousel = function () {
+        if (carouselRevealed || cancelled || !carouselShowcaseEl) return;
+        carouselRevealed = true;
+        carouselStageEl.setAttribute('visible', true);
+
+        if (isStackCarousel) {
+          carouselShowcaseEl.setAttribute('visible', true);
+          carouselShowcaseEl.setAttribute('scale', '1 1 1');
+          return;
+        }
+
+        revealWithWarmup(
+          carouselShowcaseEl,
+          'animation__pop',
+          'property:scale; from:0.001 0.001 0.001; to:1 1 1; dur:520; easing:easeOutBack',
+          function () {
+            carouselShowcaseEl.setAttribute('animation__float',
+              'property:position; from:0 ' + Number(options.y || 0.05) + ' 0.28; to:0 ' +
+              (Number(options.y || 0.05) + 0.055) + ' 0.28; dir:alternate; dur:2100; loop:true; easing:easeInOutSine');
+          }
+        );
+      };
+      var checkCarouselReady = function () {
+        var readyKey = isStackCarousel ? 'stackReady' : 'mediaReady';
+        if (carouselCards.every(function (cardEl) { return cardEl.dataset[readyKey] === 'true'; })) {
+          revealCarousel();
+        }
+      };
+
+      carouselCards.forEach(function (cardEl) {
+        cardEl.addEventListener('carousel-card-ready', checkCarouselReady, { once: true });
+      });
+      checkCarouselReady();
     }
 
     function showIslandModel(options) {
@@ -2568,7 +3141,9 @@ function registerTargetAnimations() {
     }
 
     function playConfiguredSteps(configuredSteps) {
-      runSeq(configuredSteps.map(function (step) {
+      preloadConfiguredMedia(configuredSteps, 0);
+
+      runSeq(configuredSteps.map(function (step, stepIndex) {
         return {
           delay: Number(step.delay || 0),
           fn: function (next) {
@@ -2605,6 +3180,7 @@ function registerTargetAnimations() {
             }
 
             if (type === 'words') {
+              preloadConfiguredMedia(configuredSteps, stepIndex + 1);
               playWordSequence(function () {
                 hideStepTitle();
                 next();
